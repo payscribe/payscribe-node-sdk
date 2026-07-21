@@ -1,5 +1,5 @@
 {
-  "name": "@payscribe/virtual-accounts-sdk",
+  "name": "@payscribe.co/virtual-accounts-sdk",
   "version": "0.1.0",
   "description": "Node.js/TypeScript SDK and local Swagger UI playground for Payscribe virtual accounts.",
   "type": "module",
@@ -15,7 +15,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "llm.tsx"
   ],
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --clean",

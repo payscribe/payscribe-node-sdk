@@ -33,7 +33,7 @@ npm install
 For users after publishing:
 
 ```bash
-npm install @payscribe/virtual-accounts-sdk
+npm install @payscribe.co/virtual-accounts-sdk
 ```
 
 ## Configuration
@@ -70,7 +70,7 @@ If `environment` is omitted, the SDK defaults to `sandbox`.
 ## Client Setup
 
 ```ts
-import { Payscribe } from "@payscribe/virtual-accounts-sdk";
+import { Payscribe } from "@payscribe.co/virtual-accounts-sdk";
 
 const payscribe = new Payscribe({
   secretKey: process.env.PAYSCRIBE_SECRET_KEY!,
@@ -116,7 +116,7 @@ const account = await payscribe.virtualAccounts.createStatic({
 Type:
 
 ```ts
-import type { CreateStaticVirtualAccountInput } from "@payscribe/virtual-accounts-sdk";
+import type { CreateStaticVirtualAccountInput } from "@payscribe.co/virtual-accounts-sdk";
 
 const body: CreateStaticVirtualAccountInput = {
   customerId: "customer-uuid",
@@ -157,7 +157,7 @@ const account = await payscribe.virtualAccounts.createDynamic({
 Type:
 
 ```ts
-import type { CreateDynamicVirtualAccountInput } from "@payscribe/virtual-accounts-sdk";
+import type { CreateDynamicVirtualAccountInput } from "@payscribe.co/virtual-accounts-sdk";
 
 const body: CreateDynamicVirtualAccountInput = {
   reference: "order_123",
@@ -268,7 +268,7 @@ Important: use the raw request body for webhook verification, not a re-stringifi
 Failed Payscribe API responses throw `PayscribeApiError`.
 
 ```ts
-import { PayscribeApiError } from "@payscribe/virtual-accounts-sdk";
+import { PayscribeApiError } from "@payscribe.co/virtual-accounts-sdk";
 
 try {
   await payscribe.virtualAccounts.get("5031240100");
@@ -347,7 +347,7 @@ They are typed using the SDK exports:
 import type {
   CreateDynamicVirtualAccountInput,
   CreateStaticVirtualAccountInput
-} from "@payscribe/virtual-accounts-sdk";
+} from "@payscribe.co/virtual-accounts-sdk";
 ```
 
 ## Development Commands
@@ -380,11 +380,11 @@ dist/
 The package exports both ESM and CommonJS:
 
 ```ts
-import { Payscribe } from "@payscribe/virtual-accounts-sdk";
+import { Payscribe } from "@payscribe.co/virtual-accounts-sdk";
 ```
 
 ```js
-const { Payscribe } = require("@payscribe/virtual-accounts-sdk");
+const { Payscribe } = require("@payscribe.co/virtual-accounts-sdk");
 ```
 
 ## Publishing
@@ -394,10 +394,10 @@ Before publishing, confirm the package name in `package.json`.
 Current name:
 
 ```json
-"@payscribe/virtual-accounts-sdk"
+"@payscribe.co/virtual-accounts-sdk"
 ```
 
-This requires access to the `@payscribe` npm organization. If you do not control that npm scope, rename it before publishing.
+This requires access to the `@payscribe.co` npm organization. If you do not control that npm scope, rename it before publishing.
 
 Publish flow:
 

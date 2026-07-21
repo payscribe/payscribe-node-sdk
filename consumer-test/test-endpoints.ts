@@ -3,7 +3,7 @@ import { createHmac } from "node:crypto";
 import type {
   CreateDynamicVirtualAccountInput,
   CreateStaticVirtualAccountInput
-} from "@payscribe/virtual-accounts-sdk";
+} from "@payscribe.co/virtual-accounts-sdk";
 
 type VerifyWebhookRequest = {
   rawBody: string;
