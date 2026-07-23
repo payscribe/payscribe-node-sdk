@@ -201,6 +201,178 @@ var VirtualAccountsResource = class {
   }
 };
 
+// src/resources/virtual-cards.ts
+var import_zod2 = require("zod");
+var cardLimitsSchema = import_zod2.z.object({
+  dailyLimit: import_zod2.z.number().positive().optional(),
+  transactionLimit: import_zod2.z.number().positive().optional()
+}).optional();
+var createCardSchema = import_zod2.z.object({
+  customerId: import_zod2.z.string().min(1),
+  currency: import_zod2.z.string().default("USD"),
+  brand: import_zod2.z.string().min(1),
+  amount: import_zod2.z.number().positive(),
+  type: import_zod2.z.string().default("virtual"),
+  reference: import_zod2.z.string().min(1),
+  contactless: import_zod2.z.boolean().optional(),
+  cardLimits: cardLimitsSchema
+});
+var stablecoinFundingSchema = import_zod2.z.object({
+  stablecoinCurrency: import_zod2.z.string().default("USDT"),
+  stablecoinNetwork: import_zod2.z.string().default("Tron"),
+  stablecoinChain: import_zod2.z.string().default("TRC20")
+});
+var createStablecoinCardSchema = createCardSchema.merge(stablecoinFundingSchema);
+var topUpSchema = import_zod2.z.object({
+  amount: import_zod2.z.number().positive(),
+  reference: import_zod2.z.string().min(1).optional()
+});
+var topUpStablecoinSchema = topUpSchema.merge(stablecoinFundingSchema);
+var withdrawSchema = import_zod2.z.object({
+  amount: import_zod2.z.number().positive(),
+  reference: import_zod2.z.string().min(1)
+});
+var referenceSchema = import_zod2.z.object({
+  reference: import_zod2.z.string().min(1)
+});
+var transactionsSchema = import_zod2.z.object({
+  startDate: import_zod2.z.string().min(1),
+  endDate: import_zod2.z.string().min(1),
+  pageSize: import_zod2.z.number().int().positive().optional(),
+  page: import_zod2.z.number().int().positive().optional()
+});
+var updateContactSchema = import_zod2.z.object({
+  email: import_zod2.z.string().email().optional(),
+  mobile: import_zod2.z.string().min(1).optional(),
+  billingDetails: import_zod2.z.object({
+    address1: import_zod2.z.string().min(1).optional(),
+    address2: import_zod2.z.string().min(1).optional(),
+    city: import_zod2.z.string().min(1).optional(),
+    state: import_zod2.z.string().min(1).optional(),
+    zipcode: import_zod2.z.string().min(1).optional(),
+    country: import_zod2.z.string().min(1).optional()
+  }).optional()
+});
+var VirtualCardsResource = class {
+  constructor(http) {
+    this.http = http;
+  }
+  http;
+  create(input) {
+    const payload = createCardSchema.parse(input);
+    return this.http.request("POST", "cards/create", mapCreateCardPayload(payload));
+  }
+  createWithStablecoin(input) {
+    const payload = createStablecoinCardSchema.parse(input);
+    return this.http.request("POST", "cards/create", {
+      ...mapCreateCardPayload(payload),
+      payment_method: "stablecoin",
+      stablecoin_currency: payload.stablecoinCurrency,
+      stablecoin_network: payload.stablecoinNetwork,
+      stablecoin_chain: payload.stablecoinChain
+    });
+  }
+  topUp(cardId, input) {
+    const payload = topUpSchema.parse(input);
+    return this.http.request("PATCH", `cards/${encodeURIComponent(cardId)}/topup`, {
+      amount: payload.amount,
+      ...payload.reference ? { ref: payload.reference } : {}
+    });
+  }
+  topUpWithStablecoin(cardId, input) {
+    const payload = topUpStablecoinSchema.parse(input);
+    return this.http.request("PATCH", `cards/${encodeURIComponent(cardId)}/topup`, {
+      amount: payload.amount,
+      ...payload.reference ? { ref: payload.reference } : {},
+      payment_method: "stablecoin",
+      stablecoin_currency: payload.stablecoinCurrency,
+      stablecoin_network: payload.stablecoinNetwork,
+      stablecoin_chain: payload.stablecoinChain
+    });
+  }
+  withdraw(cardId, input) {
+    const payload = withdrawSchema.parse(input);
+    return this.http.request("PATCH", `cards/${encodeURIComponent(cardId)}/withdraw`, {
+      amount: payload.amount,
+      ref: payload.reference
+    });
+  }
+  get(cardId) {
+    return this.http.request("GET", `cards/${encodeURIComponent(cardId)}`);
+  }
+  replace(cardId) {
+    return this.http.request("PATCH", `cards/replace/${encodeURIComponent(cardId)}`);
+  }
+  regularize(cardId) {
+    return this.replace(cardId);
+  }
+  transactions(cardId, input) {
+    const payload = transactionsSchema.parse(input);
+    const query = new URLSearchParams({
+      start_date: payload.startDate,
+      end_date: payload.endDate,
+      ...payload.pageSize ? { page_size: String(payload.pageSize) } : {},
+      ...payload.page ? { page: String(payload.page) } : {}
+    });
+    return this.http.request(
+      "GET",
+      `cards/${encodeURIComponent(cardId)}/transactions?${query.toString()}`
+    );
+  }
+  freeze(cardId, input) {
+    const payload = referenceSchema.parse(input);
+    return this.http.request("PATCH", `cards/${encodeURIComponent(cardId)}/freeze`, {
+      ref: payload.reference
+    });
+  }
+  unfreeze(cardId, input) {
+    const payload = referenceSchema.parse(input);
+    return this.http.request("PATCH", `cards/${encodeURIComponent(cardId)}/unfreeze`, {
+      ref: payload.reference
+    });
+  }
+  terminate(cardId, input) {
+    const payload = referenceSchema.parse(input);
+    return this.http.request("POST", `cards/${encodeURIComponent(cardId)}/terminate`, {
+      ref: payload.reference
+    });
+  }
+  updateContact(cardId, input) {
+    const payload = updateContactSchema.parse(input);
+    return this.http.request("PATCH", `cards/${encodeURIComponent(cardId)}/card-contact`, {
+      ...payload.email ? { email: payload.email } : {},
+      ...payload.mobile ? { mobile: payload.mobile } : {},
+      ...payload.billingDetails ? {
+        billing_details: {
+          address1: payload.billingDetails.address1,
+          address2: payload.billingDetails.address2,
+          city: payload.billingDetails.city,
+          state: payload.billingDetails.state,
+          zipcode: payload.billingDetails.zipcode,
+          country: payload.billingDetails.country
+        }
+      } : {}
+    });
+  }
+};
+function mapCreateCardPayload(payload) {
+  return {
+    customer_id: payload.customerId,
+    currency: payload.currency,
+    brand: payload.brand,
+    amount: payload.amount,
+    type: payload.type,
+    ref: payload.reference,
+    ...payload.contactless === void 0 ? {} : { contactless: payload.contactless },
+    ...payload.cardLimits ? {
+      card_limits: {
+        daily_limit: payload.cardLimits.dailyLimit,
+        transaction_limit: payload.cardLimits.transactionLimit
+      }
+    } : {}
+  };
+}
+
 // src/resources/webhooks.ts
 var import_node_crypto = require("crypto");
 var WebhooksResource = class {
@@ -232,10 +404,12 @@ function safeCompare(received, expected) {
 // src/payscribe.ts
 var Payscribe = class {
   virtualAccounts;
+  virtualCards;
   webhooks;
   constructor(config) {
     const http = new HttpClient(config);
     this.virtualAccounts = new VirtualAccountsResource(http);
+    this.virtualCards = new VirtualCardsResource(http);
     this.webhooks = new WebhooksResource(config.secretKey);
   }
 };

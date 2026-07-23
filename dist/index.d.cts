@@ -109,6 +109,155 @@ declare class VirtualAccountsResource {
     simulateTransfer(input: SimulateVirtualAccountTransferInput): Promise<VirtualAccountResponse>;
 }
 
+type CardBrand = "VISA" | "MASTERCARD" | string;
+type CardCurrency = "USD" | string;
+type CardType = "virtual" | "physical" | string;
+type StablecoinCurrency = "USDT" | "USDC" | string;
+type StablecoinNetwork = "Tron" | "Ethereum" | "BNB" | string;
+type StablecoinChain = "TRC20" | "ERC20" | "BEP20" | string;
+type VirtualCardBillingDetails = {
+    address?: string;
+    address1?: string;
+    address2?: string;
+    city?: string;
+    state?: string;
+    postal_code?: string;
+    zipcode?: string;
+    country?: string;
+};
+type VirtualCardDetails = {
+    id?: string;
+    card_type?: string;
+    currency?: string;
+    brand?: string;
+    name?: string;
+    first_six?: string;
+    last_four?: string;
+    masked?: string;
+    number?: string;
+    card_number?: string;
+    expiry?: string;
+    ccv?: string;
+    balance?: number;
+    status?: string;
+    billing?: VirtualCardBillingDetails;
+    created_at?: string;
+    updated_at?: string;
+};
+type VirtualCardTransactionDetails = {
+    trans_id?: string;
+    ref?: string;
+    ref_id?: string;
+    customer?: {
+        id?: string;
+        name?: string;
+    };
+    card?: Pick<VirtualCardDetails, "id" | "first_six" | "last_four" | "brand" | "balance"> & {
+        prev_balance?: number;
+    };
+    currency?: string;
+    prev_balance?: number;
+    balance?: number;
+    amount?: number;
+    action?: string;
+    created_at?: string;
+};
+type VirtualCardResponse = PayscribeResponse<{
+    details?: {
+        trans_id?: string;
+        card?: VirtualCardDetails;
+        customer?: {
+            id?: string;
+            name?: string;
+        };
+    };
+}>;
+type VirtualCardActionResponse = PayscribeResponse<{
+    details?: VirtualCardTransactionDetails;
+}>;
+type VirtualCardTransactionsResponse = PayscribeResponse<{
+    details?: VirtualCardTransactionDetails[] | Record<string, unknown>;
+}>;
+type StablecoinCardOrderResponse = PayscribeResponse<{
+    status?: "pending_payment" | string;
+    payment_method?: "stablecoin" | string;
+    address?: string;
+    memo_tag?: string | null;
+    currency?: string;
+    network?: string;
+    chain?: string;
+    amount?: number;
+    expires_at?: string;
+}>;
+type CardLimitsInput = {
+    dailyLimit?: number;
+    transactionLimit?: number;
+};
+type StablecoinFundingInput = {
+    stablecoinCurrency?: StablecoinCurrency;
+    stablecoinNetwork?: StablecoinNetwork;
+    stablecoinChain?: StablecoinChain;
+};
+type CreateVirtualCardInput = {
+    customerId: string;
+    currency?: CardCurrency;
+    brand: CardBrand;
+    amount: number;
+    type?: CardType;
+    reference: string;
+    contactless?: boolean;
+    cardLimits?: CardLimitsInput;
+};
+type CreateStablecoinVirtualCardInput = CreateVirtualCardInput & StablecoinFundingInput;
+type TopUpVirtualCardInput = {
+    amount: number;
+    reference?: string;
+};
+type TopUpVirtualCardWithStablecoinInput = TopUpVirtualCardInput & StablecoinFundingInput;
+type WithdrawVirtualCardInput = {
+    amount: number;
+    reference: string;
+};
+type VirtualCardReferenceInput = {
+    reference: string;
+};
+type GetVirtualCardTransactionsInput = {
+    startDate: string;
+    endDate: string;
+    pageSize?: number;
+    page?: number;
+};
+type UpdateVirtualCardContactInput = {
+    email?: string;
+    mobile?: string;
+    billingDetails?: {
+        address1?: string;
+        address2?: string;
+        city?: string;
+        state?: string;
+        zipcode?: string;
+        country?: string;
+    };
+};
+
+declare class VirtualCardsResource {
+    private readonly http;
+    constructor(http: HttpClient);
+    create(input: CreateVirtualCardInput): Promise<VirtualCardResponse>;
+    createWithStablecoin(input: CreateStablecoinVirtualCardInput): Promise<StablecoinCardOrderResponse>;
+    topUp(cardId: string, input: TopUpVirtualCardInput): Promise<VirtualCardActionResponse>;
+    topUpWithStablecoin(cardId: string, input: TopUpVirtualCardWithStablecoinInput): Promise<StablecoinCardOrderResponse>;
+    withdraw(cardId: string, input: WithdrawVirtualCardInput): Promise<VirtualCardActionResponse>;
+    get(cardId: string): Promise<VirtualCardResponse>;
+    replace(cardId: string): Promise<VirtualCardResponse>;
+    regularize(cardId: string): Promise<VirtualCardResponse>;
+    transactions(cardId: string, input: GetVirtualCardTransactionsInput): Promise<VirtualCardTransactionsResponse>;
+    freeze(cardId: string, input: VirtualCardReferenceInput): Promise<VirtualCardActionResponse>;
+    unfreeze(cardId: string, input: VirtualCardReferenceInput): Promise<VirtualCardActionResponse>;
+    terminate(cardId: string, input: VirtualCardReferenceInput): Promise<VirtualCardActionResponse>;
+    updateContact(cardId: string, input: UpdateVirtualCardContactInput): Promise<VirtualCardResponse>;
+}
+
 type PayscribeWebhookEvent = {
     event_id?: string;
     event_type?: string;
@@ -153,6 +302,7 @@ declare class WebhooksResource {
 
 declare class Payscribe {
     readonly virtualAccounts: VirtualAccountsResource;
+    readonly virtualCards: VirtualCardsResource;
     readonly webhooks: WebhooksResource;
     constructor(config: PayscribeConfig);
 }
@@ -163,4 +313,4 @@ declare class PayscribeApiError extends Error {
     constructor(message: string, statusCode: number, response: unknown);
 }
 
-export { type AmountType, type BankCode, type ConfirmVirtualAccountPaymentInput, type CreateDynamicVirtualAccountInput, type CreateStaticVirtualAccountInput, Payscribe, PayscribeApiError, type PayscribeConfig, type PayscribeEnvironment, type PayscribeRequestOptions, type PayscribeWebhookEvent, type SimulateVirtualAccountTransferInput, type VirtualAccountResponse };
+export { type AmountType, type BankCode, type CardBrand, type CardCurrency, type CardLimitsInput, type CardType, type ConfirmVirtualAccountPaymentInput, type CreateDynamicVirtualAccountInput, type CreateStablecoinVirtualCardInput, type CreateStaticVirtualAccountInput, type CreateVirtualCardInput, type GetVirtualCardTransactionsInput, Payscribe, PayscribeApiError, type PayscribeConfig, type PayscribeEnvironment, type PayscribeRequestOptions, type PayscribeWebhookEvent, type SimulateVirtualAccountTransferInput, type StablecoinCardOrderResponse, type StablecoinChain, type StablecoinCurrency, type StablecoinFundingInput, type StablecoinNetwork, type TopUpVirtualCardInput, type TopUpVirtualCardWithStablecoinInput, type UpdateVirtualCardContactInput, type VirtualAccountResponse, type VirtualCardActionResponse, type VirtualCardDetails, type VirtualCardReferenceInput, type VirtualCardResponse, type VirtualCardTransactionDetails, type VirtualCardTransactionsResponse, type WithdrawVirtualCardInput };

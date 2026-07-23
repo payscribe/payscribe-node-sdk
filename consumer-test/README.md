@@ -1,18 +1,18 @@
 # Payscribe SDK Consumer Test
 
-This is a separate TypeScript Node.js app that installs the packed SDK tarball and imports it as a normal external package.
+This is a separate TypeScript Node.js app that installs the published SDK from npm and imports it as a normal external package.
 
 The request bodies are typed from the SDK exports, so editors can show the interface for each endpoint body.
+
+The generic package name is `@payscribe.co/sdk`. Publish that package name first before running this consumer install flow from a clean machine.
 
 ## Setup
 
 From the SDK root:
 
 ```bash
-npm run build
-npm pack
 cd consumer-test
-npm install ../payscribe-virtual-accounts-sdk-0.1.0.tgz
+npm install
 cp .env.example .env
 npm start
 ```

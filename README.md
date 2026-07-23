@@ -1,8 +1,8 @@
-# Payscribe Virtual Accounts SDK
+# Payscribe SDK
 
-Node.js and TypeScript SDK for Payscribe virtual account collections, with a local Swagger UI playground and a typed consumer test app.
+Node.js and TypeScript SDK for Payscribe virtual account collections and virtual card issuing, with a local Swagger UI playground and a typed consumer test app.
 
-This SDK wraps the Payscribe virtual account endpoints so integrators can call intent-based methods instead of manually building request URLs and payloads.
+This SDK wraps the Payscribe virtual account and virtual card endpoints so integrators can call intent-based methods instead of manually building request URLs and payloads.
 
 ## Features
 
@@ -12,10 +12,14 @@ This SDK wraps the Payscribe virtual account endpoints so integrators can call i
 - Virtual account activation/deactivation
 - Payment confirmation
 - Sandbox transfer simulation
+- USD virtual card creation
+- Card top-up, withdrawal, replacement, freezing, unfreezing, and termination
+- Stablecoin-funded card creation and top-up
+- Card transaction lookup and cardholder contact updates
 - Webhook signature verification
 - Typed request/response helpers for TypeScript users
 - Local Swagger UI playground for manual testing
-- Typed consumer app that installs the packed SDK like a real user
+- Typed consumer app that installs the published SDK like a real user
 
 ## Requirements
 
@@ -24,16 +28,16 @@ This SDK wraps the Payscribe virtual account endpoints so integrators can call i
 
 ## Install
 
+For application usage:
+
+```bash
+npm install @payscribe.co/sdk
+```
+
 For local development in this repository:
 
 ```bash
 npm install
-```
-
-For users after publishing:
-
-```bash
-npm install @payscribe.co/virtual-accounts-sdk
 ```
 
 ## Configuration
@@ -70,7 +74,7 @@ If `environment` is omitted, the SDK defaults to `sandbox`.
 ## Client Setup
 
 ```ts
-import { Payscribe } from "@payscribe.co/virtual-accounts-sdk";
+import { Payscribe } from "@payscribe.co/sdk";
 
 const payscribe = new Payscribe({
   secretKey: process.env.PAYSCRIBE_SECRET_KEY!,
@@ -116,7 +120,7 @@ const account = await payscribe.virtualAccounts.createStatic({
 Type:
 
 ```ts
-import type { CreateStaticVirtualAccountInput } from "@payscribe.co/virtual-accounts-sdk";
+import type { CreateStaticVirtualAccountInput } from "@payscribe.co/sdk";
 
 const body: CreateStaticVirtualAccountInput = {
   customerId: "customer-uuid",
@@ -157,7 +161,7 @@ const account = await payscribe.virtualAccounts.createDynamic({
 Type:
 
 ```ts
-import type { CreateDynamicVirtualAccountInput } from "@payscribe.co/virtual-accounts-sdk";
+import type { CreateDynamicVirtualAccountInput } from "@payscribe.co/sdk";
 
 const body: CreateDynamicVirtualAccountInput = {
   reference: "order_123",
@@ -233,6 +237,157 @@ const simulation = await payscribe.virtualAccounts.simulateTransfer({
 });
 ```
 
+## Create Virtual Card
+
+Use this to issue a USD virtual card for an existing Payscribe customer.
+
+```ts
+const card = await payscribe.virtualCards.create({
+  customerId: "customer-uuid",
+  currency: "USD",
+  brand: "VISA",
+  amount: 10,
+  type: "virtual",
+  reference: "card_ref_123"
+});
+```
+
+For a contactless card, include `contactless` and optional card limits:
+
+```ts
+const card = await payscribe.virtualCards.create({
+  customerId: "customer-uuid",
+  brand: "MASTERCARD",
+  amount: 25,
+  reference: "contactless_card_ref_123",
+  contactless: true,
+  cardLimits: {
+    dailyLimit: 100,
+    transactionLimit: 25
+  }
+});
+```
+
+Type:
+
+```ts
+import type { CreateVirtualCardInput } from "@payscribe.co/sdk";
+
+const body: CreateVirtualCardInput = {
+  customerId: "customer-uuid",
+  brand: "VISA",
+  amount: 10,
+  reference: "card_ref_123"
+};
+```
+
+## Create Virtual Card With Stablecoin
+
+Use this when the card should be funded by an on-chain stablecoin deposit instead of your Payscribe USD wallet balance.
+
+```ts
+const order = await payscribe.virtualCards.createWithStablecoin({
+  customerId: "customer-uuid",
+  currency: "USD",
+  brand: "VISA",
+  amount: 5,
+  type: "virtual",
+  reference: "stablecoin_card_ref_123",
+  stablecoinCurrency: "USDT",
+  stablecoinNetwork: "Tron",
+  stablecoinChain: "TRC20"
+});
+```
+
+Payscribe returns a deposit address and amount. The card is created after the stablecoin deposit is confirmed.
+
+## Top Up Virtual Card
+
+```ts
+const result = await payscribe.virtualCards.topUp("card-uuid", {
+  amount: 10,
+  reference: "topup_ref_123"
+});
+```
+
+With stablecoin:
+
+```ts
+const order = await payscribe.virtualCards.topUpWithStablecoin("card-uuid", {
+  amount: 10,
+  reference: "stablecoin_topup_ref_123",
+  stablecoinCurrency: "USDT",
+  stablecoinNetwork: "Tron",
+  stablecoinChain: "TRC20"
+});
+```
+
+## Withdraw From Virtual Card
+
+```ts
+const result = await payscribe.virtualCards.withdraw("card-uuid", {
+  amount: 5,
+  reference: "withdraw_ref_123"
+});
+```
+
+## Get Virtual Card
+
+```ts
+const card = await payscribe.virtualCards.get("card-uuid");
+```
+
+## Get Virtual Card Transactions
+
+```ts
+const transactions = await payscribe.virtualCards.transactions("card-uuid", {
+  startDate: "2024-07-01",
+  endDate: "2024-07-30",
+  pageSize: 20,
+  page: 1
+});
+```
+
+## Virtual Card Controls
+
+```ts
+await payscribe.virtualCards.freeze("card-uuid", {
+  reference: "freeze_ref_123"
+});
+
+await payscribe.virtualCards.unfreeze("card-uuid", {
+  reference: "unfreeze_ref_123"
+});
+
+await payscribe.virtualCards.terminate("card-uuid", {
+  reference: "terminate_ref_123"
+});
+```
+
+Replace or regularize a card:
+
+```ts
+await payscribe.virtualCards.replace("card-uuid");
+await payscribe.virtualCards.regularize("card-uuid");
+```
+
+## Update Virtual Card Contact
+
+```ts
+const result = await payscribe.virtualCards.updateContact("card-uuid", {
+  email: "john.doe@example.com",
+  mobile: "+2348012345678",
+  billingDetails: {
+    address1: "12 Broad Street",
+    address2: "Suite 4",
+    city: "Lagos",
+    state: "Lagos",
+    zipcode: "100001",
+    country: "NG"
+  }
+});
+```
+
 ## Webhook Verification
 
 Payscribe webhooks include an `X-Payscribe-Signature` header. Verify it against the raw request body before processing the event.
@@ -268,7 +423,7 @@ Important: use the raw request body for webhook verification, not a re-stringifi
 Failed Payscribe API responses throw `PayscribeApiError`.
 
 ```ts
-import { PayscribeApiError } from "@payscribe.co/virtual-accounts-sdk";
+import { PayscribeApiError } from "@payscribe.co/sdk";
 
 try {
   await payscribe.virtualAccounts.get("5031240100");
@@ -283,7 +438,7 @@ try {
 
 ## Local Swagger Playground
 
-The repository includes a local Express server with Swagger UI. It calls the SDK internally.
+The repository includes a local Express server with Swagger UI. It calls the SDK internally for virtual account and virtual card requests.
 
 ```bash
 npm run dev
@@ -303,15 +458,15 @@ PORT=3001 npm run dev
 
 ## Typed Consumer Test App
 
-`consumer-test/` is a separate TypeScript Node.js app that installs the packed SDK tarball and imports it like a real external user.
+`consumer-test/` is a separate TypeScript Node.js app that installs the published SDK from npm and imports it like a real external user.
+
+Because the generic package name is `@payscribe.co/sdk`, publish that package name first before running the consumer install flow from a clean machine.
 
 From the SDK root:
 
 ```bash
-npm run build
-npm pack
 cd consumer-test
-npm install ../payscribe-virtual-accounts-sdk-0.1.0.tgz
+npm install
 cp .env.example .env
 ```
 
@@ -347,7 +502,7 @@ They are typed using the SDK exports:
 import type {
   CreateDynamicVirtualAccountInput,
   CreateStaticVirtualAccountInput
-} from "@payscribe.co/virtual-accounts-sdk";
+} from "@payscribe.co/sdk";
 ```
 
 ## Development Commands
@@ -380,26 +535,30 @@ dist/
 The package exports both ESM and CommonJS:
 
 ```ts
-import { Payscribe } from "@payscribe.co/virtual-accounts-sdk";
+import { Payscribe } from "@payscribe.co/sdk";
 ```
 
 ```js
-const { Payscribe } = require("@payscribe.co/virtual-accounts-sdk");
+const { Payscribe } = require("@payscribe.co/sdk");
 ```
 
 ## Publishing
 
-Before publishing, confirm the package name in `package.json`.
+The generic package name is:
 
-Current name:
-
-```json
-"@payscribe.co/virtual-accounts-sdk"
+```bash
+npm install @payscribe.co/sdk
 ```
 
-This requires access to the `@payscribe.co` npm organization. If you do not control that npm scope, rename it before publishing.
+Package name:
 
-Publish flow:
+```json
+"@payscribe.co/sdk"
+```
+
+Publishing requires access to the `@payscribe.co` npm organization.
+
+Release flow:
 
 ```bash
 npm login

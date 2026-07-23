@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@payscribe.co/virtual-accounts-sdk": "^0.1.0",
+    "@payscribe.co/sdk": "^0.1.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2"
   },

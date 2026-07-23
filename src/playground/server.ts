@@ -46,6 +46,61 @@ app.post("/api/virtual-accounts/confirm-payment", asyncHandler(async (req, res) 
   res.json(await payscribe.virtualAccounts.confirmPayment(req.body));
 }));
 
+app.post("/api/virtual-cards", asyncHandler(async (req, res) => {
+  res.json(await payscribe.virtualCards.create(req.body));
+}));
+
+app.post("/api/virtual-cards/stablecoin", asyncHandler(async (req, res) => {
+  res.json(await payscribe.virtualCards.createWithStablecoin(req.body));
+}));
+
+app.get("/api/virtual-cards/:cardId", asyncHandler(async (req, res) => {
+  res.json(await payscribe.virtualCards.get(pathParam(req.params.cardId)));
+}));
+
+app.patch("/api/virtual-cards/:cardId/topup", asyncHandler(async (req, res) => {
+  res.json(await payscribe.virtualCards.topUp(pathParam(req.params.cardId), req.body));
+}));
+
+app.patch("/api/virtual-cards/:cardId/topup/stablecoin", asyncHandler(async (req, res) => {
+  res.json(await payscribe.virtualCards.topUpWithStablecoin(pathParam(req.params.cardId), req.body));
+}));
+
+app.patch("/api/virtual-cards/:cardId/withdraw", asyncHandler(async (req, res) => {
+  res.json(await payscribe.virtualCards.withdraw(pathParam(req.params.cardId), req.body));
+}));
+
+app.patch("/api/virtual-cards/:cardId/replace", asyncHandler(async (req, res) => {
+  res.json(await payscribe.virtualCards.replace(pathParam(req.params.cardId)));
+}));
+
+app.get("/api/virtual-cards/:cardId/transactions", asyncHandler(async (req, res) => {
+  res.json(
+    await payscribe.virtualCards.transactions(pathParam(req.params.cardId), {
+      startDate: String(req.query.startDate ?? ""),
+      endDate: String(req.query.endDate ?? ""),
+      pageSize: req.query.pageSize ? Number(req.query.pageSize) : undefined,
+      page: req.query.page ? Number(req.query.page) : undefined
+    })
+  );
+}));
+
+app.patch("/api/virtual-cards/:cardId/freeze", asyncHandler(async (req, res) => {
+  res.json(await payscribe.virtualCards.freeze(pathParam(req.params.cardId), req.body));
+}));
+
+app.patch("/api/virtual-cards/:cardId/unfreeze", asyncHandler(async (req, res) => {
+  res.json(await payscribe.virtualCards.unfreeze(pathParam(req.params.cardId), req.body));
+}));
+
+app.post("/api/virtual-cards/:cardId/terminate", asyncHandler(async (req, res) => {
+  res.json(await payscribe.virtualCards.terminate(pathParam(req.params.cardId), req.body));
+}));
+
+app.patch("/api/virtual-cards/:cardId/contact", asyncHandler(async (req, res) => {
+  res.json(await payscribe.virtualCards.updateContact(pathParam(req.params.cardId), req.body));
+}));
+
 app.post("/api/webhooks/verify", (req, res) => {
   const rawBody = String(req.body.rawBody ?? "");
   const signature = String(req.body.signature ?? "");

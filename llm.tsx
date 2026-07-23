@@ -3,22 +3,22 @@
  *
  * This file is intentionally concise and structured. It describes the public
  * SDK API, examples, request shapes, environment behavior, and common failure
- * modes for @payscribe.co/virtual-accounts-sdk.
+ * modes for @payscribe.co/sdk.
  */
 
-export const payscribeVirtualAccountsSdkLlmContext = {
+export const payscribeSdkLlmContext = {
   package: {
-    name: "@payscribe.co/virtual-accounts-sdk",
+    name: "@payscribe.co/sdk",
     version: "0.1.0",
     runtime: "Node.js 18+",
     language: "TypeScript",
     moduleFormats: ["ESM", "CommonJS"],
     purpose:
-      "Node.js/TypeScript SDK for Payscribe NGN virtual account collections."
+      "Node.js/TypeScript SDK for Payscribe NGN virtual account collections and USD virtual card issuing."
   },
 
   install: {
-    npm: "npm install @payscribe.co/virtual-accounts-sdk"
+    npm: "npm install @payscribe.co/sdk"
   },
 
   environments: {
@@ -28,16 +28,16 @@ export const payscribeVirtualAccountsSdkLlmContext = {
   },
 
   imports: {
-    esm: 'import { Payscribe } from "@payscribe.co/virtual-accounts-sdk";',
+    esm: 'import { Payscribe } from "@payscribe.co/sdk";',
     commonjs:
-      'const { Payscribe } = require("@payscribe.co/virtual-accounts-sdk");',
+      'const { Payscribe } = require("@payscribe.co/sdk");',
     types:
-      'import type { CreateStaticVirtualAccountInput, CreateDynamicVirtualAccountInput } from "@payscribe.co/virtual-accounts-sdk";'
+      'import type { CreateStaticVirtualAccountInput, CreateDynamicVirtualAccountInput, CreateVirtualCardInput } from "@payscribe.co/sdk";'
   },
 
   clientSetup: {
     example: `
-import { Payscribe } from "@payscribe.co/virtual-accounts-sdk";
+import { Payscribe } from "@payscribe.co/sdk";
 
 const payscribe = new Payscribe({
   secretKey: process.env.PAYSCRIBE_SECRET_KEY!,
@@ -194,6 +194,145 @@ type SimulateVirtualAccountTransferInput = {
       }
     },
 
+    virtualCards: {
+      create: {
+        description:
+          "Create a USD virtual card for an existing Payscribe customer.",
+        sdkCall: "payscribe.virtualCards.create(input)",
+        payscribeEndpoint: "POST /cards/create",
+        mappedPayloadFields: {
+          customer_id: "input.customerId",
+          currency: 'input.currency ?? "USD"',
+          brand: "input.brand",
+          amount: "input.amount",
+          type: 'input.type ?? "virtual"',
+          ref: "input.reference",
+          contactless: "input.contactless, optional",
+          card_limits: "daily_limit and transaction_limit, optional"
+        },
+        inputType: `
+type CreateVirtualCardInput = {
+  customerId: string;
+  currency?: "USD" | string;
+  brand: "VISA" | "MASTERCARD" | string;
+  amount: number;
+  type?: "virtual" | "physical" | string;
+  reference: string;
+  contactless?: boolean;
+  cardLimits?: {
+    dailyLimit?: number;
+    transactionLimit?: number;
+  };
+};
+`.trim(),
+        example: `
+await payscribe.virtualCards.create({
+  customerId: "customer-uuid",
+  brand: "VISA",
+  amount: 10,
+  reference: "card_ref_123"
+});
+`.trim()
+      },
+
+      createWithStablecoin: {
+        description:
+          "Create a card using a stablecoin deposit instead of Payscribe USD wallet balance.",
+        sdkCall: "payscribe.virtualCards.createWithStablecoin(input)",
+        payscribeEndpoint: "POST /cards/create",
+        additionalPayloadFields: {
+          payment_method: "stablecoin",
+          stablecoin_currency: 'input.stablecoinCurrency ?? "USDT"',
+          stablecoin_network: 'input.stablecoinNetwork ?? "Tron"',
+          stablecoin_chain: 'input.stablecoinChain ?? "TRC20"'
+        },
+        example: `
+await payscribe.virtualCards.createWithStablecoin({
+  customerId: "customer-uuid",
+  brand: "VISA",
+  amount: 5,
+  reference: "stablecoin_card_ref_123",
+  stablecoinCurrency: "USDT",
+  stablecoinNetwork: "Tron",
+  stablecoinChain: "TRC20"
+});
+`.trim()
+      },
+
+      topUp: {
+        description: "Top up an existing virtual card from wallet balance.",
+        sdkCall: 'payscribe.virtualCards.topUp("card-uuid", input)',
+        payscribeEndpoint: "PATCH /cards/{cardId}/topup",
+        inputType: `
+type TopUpVirtualCardInput = {
+  amount: number;
+  reference?: string;
+};
+`.trim()
+      },
+
+      topUpWithStablecoin: {
+        description: "Top up an existing virtual card using stablecoin funding.",
+        sdkCall: 'payscribe.virtualCards.topUpWithStablecoin("card-uuid", input)',
+        payscribeEndpoint: "PATCH /cards/{cardId}/topup"
+      },
+
+      withdraw: {
+        description: "Withdraw a specified amount from a virtual card balance.",
+        sdkCall: 'payscribe.virtualCards.withdraw("card-uuid", input)',
+        payscribeEndpoint: "PATCH /cards/{cardId}/withdraw"
+      },
+
+      get: {
+        description: "Fetch virtual card details by card ID.",
+        sdkCall: 'payscribe.virtualCards.get("card-uuid")',
+        payscribeEndpoint: "GET /cards/{cardId}"
+      },
+
+      replace: {
+        description: "Replace a card associated with a decommissioned BIN.",
+        sdkCall: 'payscribe.virtualCards.replace("card-uuid")',
+        payscribeEndpoint: "PATCH /cards/replace/{cardId}"
+      },
+
+      regularize: {
+        description: "Alias for replace.",
+        sdkCall: 'payscribe.virtualCards.regularize("card-uuid")',
+        payscribeEndpoint: "PATCH /cards/replace/{cardId}"
+      },
+
+      transactions: {
+        description: "Fetch card transactions for a date range.",
+        sdkCall: 'payscribe.virtualCards.transactions("card-uuid", input)',
+        payscribeEndpoint:
+          "GET /cards/{cardId}/transactions?start_date&end_date&page_size&page"
+      },
+
+      freeze: {
+        description: "Freeze a virtual card.",
+        sdkCall: 'payscribe.virtualCards.freeze("card-uuid", { reference })',
+        payscribeEndpoint: "PATCH /cards/{cardId}/freeze"
+      },
+
+      unfreeze: {
+        description: "Unfreeze a virtual card.",
+        sdkCall: 'payscribe.virtualCards.unfreeze("card-uuid", { reference })',
+        payscribeEndpoint: "PATCH /cards/{cardId}/unfreeze"
+      },
+
+      terminate: {
+        description: "Terminate a virtual card. This action cannot be reversed.",
+        sdkCall: 'payscribe.virtualCards.terminate("card-uuid", { reference })',
+        payscribeEndpoint: "POST /cards/{cardId}/terminate"
+      },
+
+      updateContact: {
+        description: "Update cardholder contact and billing details.",
+        sdkCall: 'payscribe.virtualCards.updateContact("card-uuid", input)',
+        payscribeEndpoint: "PATCH /cards/{cardId}/card-contact"
+      }
+    },
+
     webhooks: {
       verifySignature: {
         description:
@@ -231,7 +370,7 @@ if (event.event_type === "accounts.payment.status") {
     className: "PayscribeApiError",
     fields: ["statusCode", "message", "response"],
     example: `
-import { PayscribeApiError } from "@payscribe.co/virtual-accounts-sdk";
+import { PayscribeApiError } from "@payscribe.co/sdk";
 
 try {
   await payscribe.virtualAccounts.get("5031240100");
@@ -253,12 +392,10 @@ try {
     },
     consumerTest: {
       description:
-        "consumer-test is a separate TypeScript app that installs the packed SDK tarball as a real dependency.",
+        "consumer-test is a separate TypeScript app that installs the published SDK from npm as a real dependency.",
       commands: [
-        "npm run build",
-        "npm pack",
         "cd consumer-test",
-        "npm install ../payscribe.co-virtual-accounts-sdk-0.1.0.tgz",
+        "npm install",
         "cp .env.example .env",
         "npm start",
         "npm run test:endpoints"
@@ -268,7 +405,7 @@ try {
   },
 
   publish: {
-    packageName: "@payscribe.co/virtual-accounts-sdk",
+    packageName: "@payscribe.co/sdk",
     commands: [
       "npm run typecheck",
       "npm run test",
@@ -281,4 +418,4 @@ try {
   }
 } as const;
 
-export default payscribeVirtualAccountsSdkLlmContext;
+export default payscribeSdkLlmContext;

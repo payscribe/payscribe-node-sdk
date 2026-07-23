@@ -11,7 +11,7 @@ import {
   Payscribe,
   type CreateDynamicVirtualAccountInput,
   type CreateStaticVirtualAccountInput
-} from "@payscribe.co/virtual-accounts-sdk";
+} from "@payscribe.co/sdk";
 
 type VerifyWebhookBody = {
   rawBody: string;
