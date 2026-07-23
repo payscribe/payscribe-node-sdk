@@ -9,6 +9,7 @@ import type { ParamsDictionary } from "express-serve-static-core";
 import type { ParsedQs } from "qs";
 import {
   Payscribe,
+  type CreateVirtualCardInput,
   type CreateDynamicVirtualAccountInput,
   type CreateStaticVirtualAccountInput
 } from "@payscribe.co/sdk";
@@ -42,6 +43,8 @@ app.get("/", (_req, res) => {
       "POST /virtual-accounts/static",
       "POST /virtual-accounts/dynamic",
       "GET /virtual-accounts/:accountNumber",
+      "POST /virtual-cards",
+      "GET /virtual-cards/:cardId",
       "POST /webhooks/verify"
     ]
   });
@@ -74,6 +77,22 @@ app.get(
   "/virtual-accounts/:accountNumber",
   asyncHandler(async (req: Request<{ accountNumber: string }>, res) => {
     const result = await payscribe.virtualAccounts.get(req.params.accountNumber);
+    res.json(result);
+  })
+);
+
+app.post(
+  "/virtual-cards",
+  asyncHandler(async (req: Request<object, unknown, CreateVirtualCardInput>, res) => {
+    const result = await payscribe.virtualCards.create(req.body);
+    res.json(result);
+  })
+);
+
+app.get(
+  "/virtual-cards/:cardId",
+  asyncHandler(async (req: Request<{ cardId: string }>, res) => {
+    const result = await payscribe.virtualCards.get(req.params.cardId);
     res.json(result);
   })
 );
