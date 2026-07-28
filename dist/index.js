@@ -71,31 +71,480 @@ function extractErrorMessage(response, fallback) {
   return fallback || "Payscribe API request failed.";
 }
 
-// src/resources/virtual-accounts.ts
+// src/resources/bills.ts
 import { z } from "zod";
-var staticAccountSchema = z.object({
-  customerId: z.string().min(1),
-  banks: z.array(z.string().min(1)).min(1),
-  currency: z.string().default("NGN"),
-  identity: z.object({
-    type: z.string().min(1),
-    number: z.string().min(1)
+var nonEmptyString = z.string().min(1);
+var amount = z.union([z.number().positive(), nonEmptyString]);
+var referenceSchema = z.object({
+  reference: nonEmptyString.optional()
+});
+var fetchCableBouquetsSchema = z.object({
+  service: nonEmptyString
+});
+var validateCableSchema = z.object({
+  service: nonEmptyString,
+  account: nonEmptyString,
+  planId: nonEmptyString,
+  month: z.number().int().positive().optional()
+});
+var payCableSchema = z.object({
+  planId: nonEmptyString,
+  customerName: nonEmptyString,
+  account: nonEmptyString,
+  service: nonEmptyString,
+  reference: nonEmptyString,
+  phone: nonEmptyString.optional(),
+  email: z.string().email().optional(),
+  month: z.number().int().positive().optional()
+});
+var topUpCableSchema = payCableSchema.omit({ planId: true }).extend({ amount });
+var dataLookupSchema = z.object({
+  network: nonEmptyString.optional(),
+  category: nonEmptyString.optional()
+});
+var vendDataSchema = z.object({
+  plan: nonEmptyString,
+  recipient: z.union([nonEmptyString, z.array(nonEmptyString).min(1)]),
+  network: nonEmptyString,
+  reference: nonEmptyString.optional()
+});
+var purchaseSpectranetPinsSchema = z.object({
+  planId: nonEmptyString,
+  quantity: z.number().int().positive(),
+  reference: nonEmptyString
+});
+var purchaseEPinSchema = z.object({
+  id: nonEmptyString,
+  quantity: z.number().int().positive(),
+  reference: nonEmptyString
+});
+var lookupJambUserSchema = z.object({
+  id: z.union([z.number(), nonEmptyString]),
+  account: nonEmptyString
+});
+var retrieveEPinSchema = z.object({
+  transactionId: nonEmptyString
+});
+var airtimeToWalletSchema = z.object({
+  network: nonEmptyString,
+  amount,
+  phoneNumber: nonEmptyString,
+  from: nonEmptyString,
+  reference: nonEmptyString.optional()
+});
+var validateElectricitySchema = z.object({
+  meterNumber: nonEmptyString,
+  meterType: nonEmptyString,
+  amount,
+  service: nonEmptyString
+});
+var payElectricitySchema = validateElectricitySchema.extend({
+  customerName: nonEmptyString,
+  address: nonEmptyString.optional(),
+  phone: nonEmptyString.optional(),
+  email: z.string().email().optional(),
+  reference: nonEmptyString.optional()
+});
+var requerySchema = z.object({
+  transactionId: nonEmptyString
+});
+var smsSchema = z.object({
+  to: nonEmptyString,
+  message: nonEmptyString,
+  reference: nonEmptyString.optional(),
+  senderId: nonEmptyString.optional()
+});
+var bettingLookupSchema = z.object({
+  betId: nonEmptyString,
+  customerId: nonEmptyString
+});
+var fundBettingWalletSchema = bettingLookupSchema.extend({
+  customerName: nonEmptyString,
+  amount,
+  reference: nonEmptyString
+});
+var vendAirtimeSchema = z.object({
+  network: nonEmptyString,
+  amount,
+  recipient: z.union([nonEmptyString, z.array(nonEmptyString).min(1)]),
+  ported: z.boolean().optional(),
+  reference: nonEmptyString.optional()
+});
+var bulkAirtimeSchema = z.object({
+  rows: z.array(
+    z.object({
+      phone: nonEmptyString,
+      amount: z.number().positive(),
+      provider: nonEmptyString,
+      country: nonEmptyString.optional(),
+      reference: nonEmptyString.optional()
+    })
+  ).min(1),
+  reference: nonEmptyString.optional()
+});
+var internationalProvidersSchema = z.object({
+  iso: nonEmptyString
+});
+var internationalProductsSchema = z.object({
+  iso: nonEmptyString,
+  code: nonEmptyString
+});
+var internationalRateSchema = z.object({
+  iso: nonEmptyString,
+  sku: nonEmptyString,
+  amount
+});
+var vendInternationalBillSchema = z.object({
+  iso: nonEmptyString,
+  providerCode: nonEmptyString,
+  sku: nonEmptyString,
+  amount,
+  account: nonEmptyString,
+  debitCurrency: nonEmptyString.optional(),
+  reference: nonEmptyString
+});
+var BillsResource = class {
+  constructor(http) {
+    this.http = http;
+    this.cable = new CableBillsResource(http);
+    this.internet = new InternetBillsResource(http);
+    this.data = new DataBillsResource(http);
+    this.epins = new EPinBillsResource(http);
+    this.airtimeToWallet = new AirtimeToWalletBillsResource(http);
+    this.electricity = new ElectricityBillsResource(http);
+    this.sms = new SmsBillsResource(http);
+    this.betting = new BettingBillsResource(http);
+    this.airtime = new AirtimeBillsResource(http);
+    this.international = new InternationalBillsResource(http);
+  }
+  http;
+  cable;
+  internet;
+  data;
+  epins;
+  airtimeToWallet;
+  electricity;
+  sms;
+  betting;
+  airtime;
+  international;
+  requery(input) {
+    const payload = requerySchema.parse(input);
+    return this.http.request("GET", `requery?${query({ trans_id: payload.transactionId })}`);
+  }
+};
+var CableBillsResource = class {
+  constructor(http) {
+    this.http = http;
+  }
+  http;
+  fetchBouquets(input) {
+    const payload = fetchCableBouquetsSchema.parse(input);
+    return this.http.request("GET", `bouquets?${query({ service: payload.service })}`);
+  }
+  validateSmartCard(input) {
+    const payload = validateCableSchema.parse(input);
+    return this.http.request("POST", "multichoice/validate", {
+      service: payload.service,
+      account: payload.account,
+      month: payload.month,
+      plan_id: payload.planId
+    });
+  }
+  pay(input) {
+    const payload = payCableSchema.parse(input);
+    return this.http.request("POST", "multichoice/vend", {
+      plan_id: payload.planId,
+      customer_name: payload.customerName,
+      account: payload.account,
+      service: payload.service,
+      ref: payload.reference,
+      phone: payload.phone,
+      email: payload.email,
+      month: payload.month
+    });
+  }
+  topUp(input) {
+    const payload = topUpCableSchema.parse(input);
+    return this.http.request("POST", "multichoice/topup", {
+      amount: payload.amount,
+      customer_name: payload.customerName,
+      account: payload.account,
+      service: payload.service,
+      ref: payload.reference,
+      phone: payload.phone,
+      email: payload.email,
+      month: payload.month
+    });
+  }
+};
+var InternetBillsResource = class {
+  constructor(http) {
+    this.http = http;
+  }
+  http;
+  listServices() {
+    return this.http.request("GET", "internet/list");
+  }
+  spectranetPinPlans() {
+    return this.http.request("GET", "internet/spectranet/pins/plans");
+  }
+  purchaseSpectranetPins(input) {
+    const payload = purchaseSpectranetPinsSchema.parse(input);
+    return this.http.request("POST", "internet/spectranet/pins/vend", {
+      plan_id: payload.planId,
+      qty: payload.quantity,
+      ref: payload.reference
+    });
+  }
+};
+var DataBillsResource = class {
+  constructor(http) {
+    this.http = http;
+  }
+  http;
+  lookup(input = {}) {
+    const payload = dataLookupSchema.parse(input);
+    const params = query({
+      network: payload.network,
+      category: payload.category
+    });
+    return this.http.request("GET", params ? `data/lookup?${params}` : "data/lookup");
+  }
+  vend(input) {
+    const payload = vendDataSchema.parse(input);
+    return this.http.request("POST", "data/vend", {
+      plan: payload.plan,
+      recipient: payload.recipient,
+      network: payload.network,
+      ref: payload.reference
+    });
+  }
+};
+var EPinBillsResource = class {
+  constructor(http) {
+    this.http = http;
+  }
+  http;
+  list() {
+    return this.http.request("GET", "epins");
+  }
+  purchase(input) {
+    const payload = purchaseEPinSchema.parse(input);
+    return this.http.request("POST", "epins/vend", {
+      qty: payload.quantity,
+      id: payload.id,
+      ref: payload.reference
+    });
+  }
+  lookupJambUser(input) {
+    const payload = lookupJambUserSchema.parse(input);
+    return this.http.request("POST", "epins/jamb/user/lookup", {
+      id: payload.id,
+      account: payload.account
+    });
+  }
+  retrieve(input) {
+    const payload = retrieveEPinSchema.parse(input);
+    return this.http.request("GET", `epins/retrieve?${query({ trans_id: payload.transactionId })}`);
+  }
+};
+var AirtimeToWalletBillsResource = class {
+  constructor(http) {
+    this.http = http;
+  }
+  http;
+  lookup() {
+    return this.http.request("POST", "airtime_to_wallet");
+  }
+  process(input) {
+    const payload = airtimeToWalletSchema.parse(input);
+    return this.http.request("POST", "airtime_to_wallet/vend", {
+      network: payload.network,
+      amount: String(payload.amount),
+      phone_number: payload.phoneNumber,
+      from: payload.from,
+      ref: payload.reference
+    });
+  }
+};
+var ElectricityBillsResource = class {
+  constructor(http) {
+    this.http = http;
+  }
+  http;
+  validate(input) {
+    const payload = validateElectricitySchema.parse(input);
+    return this.http.request("POST", "electricity/validate", {
+      meter_number: payload.meterNumber,
+      meter_type: payload.meterType,
+      amount: payload.amount,
+      service: payload.service
+    });
+  }
+  pay(input) {
+    const payload = payElectricitySchema.parse(input);
+    return this.http.request("POST", "electricity/vend", {
+      meter_number: payload.meterNumber,
+      meter_type: payload.meterType,
+      amount: payload.amount,
+      service: payload.service,
+      phone: payload.phone,
+      email: payload.email,
+      customer_name: payload.customerName,
+      address: payload.address,
+      ref: payload.reference
+    });
+  }
+};
+var SmsBillsResource = class {
+  constructor(http) {
+    this.http = http;
+  }
+  http;
+  send(input) {
+    const payload = smsSchema.parse(input);
+    return this.http.request("POST", "sms", {
+      to: payload.to,
+      message: payload.message,
+      ref: payload.reference,
+      sender_id: payload.senderId
+    });
+  }
+};
+var BettingBillsResource = class {
+  constructor(http) {
+    this.http = http;
+  }
+  http;
+  listProviders() {
+    return this.http.request("GET", "betting/list");
+  }
+  lookup(input) {
+    const payload = bettingLookupSchema.parse(input);
+    return this.http.request(
+      "GET",
+      `betting/lookup?${query({ bet_id: payload.betId, customer_id: payload.customerId })}`
+    );
+  }
+  fundWallet(input) {
+    const payload = fundBettingWalletSchema.parse(input);
+    return this.http.request("POST", "betting/vend", {
+      bet_id: payload.betId,
+      customer_id: payload.customerId,
+      customer_name: payload.customerName,
+      amount: payload.amount,
+      ref: payload.reference
+    });
+  }
+};
+var AirtimeBillsResource = class {
+  constructor(http) {
+    this.http = http;
+  }
+  http;
+  vend(input) {
+    const payload = vendAirtimeSchema.parse(input);
+    return this.http.request("POST", "airtime", {
+      network: payload.network,
+      amount: payload.amount,
+      recipient: payload.recipient,
+      ported: payload.ported,
+      ref: payload.reference
+    });
+  }
+  bulkVend(input) {
+    const payload = bulkAirtimeSchema.parse(input);
+    return this.http.request("POST", "airtime", {
+      rows: payload.rows.map((row) => ({
+        phone: row.phone,
+        amount: row.amount,
+        provider: row.provider,
+        country: row.country,
+        reference: row.reference
+      })),
+      ref: payload.reference
+    });
+  }
+};
+var InternationalBillsResource = class {
+  constructor(http) {
+    this.http = http;
+  }
+  http;
+  countries() {
+    return this.http.request("GET", "international-bills/countries");
+  }
+  providers(input) {
+    const payload = internationalProvidersSchema.parse(input);
+    return this.http.request("GET", `international-bills/providers?${query({ iso: payload.iso })}`);
+  }
+  products(input) {
+    const payload = internationalProductsSchema.parse(input);
+    return this.http.request(
+      "GET",
+      `international-bills/products?${query({ iso: payload.iso, code: payload.code })}`
+    );
+  }
+  rate(input) {
+    const payload = internationalRateSchema.parse(input);
+    return this.http.request(
+      "GET",
+      `international-bills/rate?${query({
+        iso: payload.iso,
+        sku: payload.sku,
+        amount: String(payload.amount)
+      })}`
+    );
+  }
+  vend(input) {
+    const payload = vendInternationalBillSchema.parse(input);
+    return this.http.request("POST", "international-bills/vend", {
+      iso: payload.iso,
+      provider_code: payload.providerCode,
+      sku: payload.sku,
+      amount: String(payload.amount),
+      account: payload.account,
+      debit_currency: payload.debitCurrency,
+      ref: payload.reference
+    });
+  }
+};
+function query(params) {
+  const queryParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== void 0) {
+      queryParams.set(key, String(value));
+    }
+  }
+  return queryParams.toString();
+}
+
+// src/resources/virtual-accounts.ts
+import { z as z2 } from "zod";
+var staticAccountSchema = z2.object({
+  customerId: z2.string().min(1),
+  banks: z2.array(z2.string().min(1)).min(1),
+  currency: z2.string().default("NGN"),
+  identity: z2.object({
+    type: z2.string().min(1),
+    number: z2.string().min(1)
   }).optional()
 });
-var dynamicAccountSchema = z.object({
-  reference: z.string().min(1),
-  amount: z.number().positive(),
-  amountType: z.enum(["EXACT", "ANY"]).default("EXACT"),
-  description: z.string().optional(),
-  currency: z.string().default("NGN"),
-  expiresIn: z.object({
-    duration: z.number().positive(),
-    type: z.string().min(1)
+var dynamicAccountSchema = z2.object({
+  reference: z2.string().min(1),
+  amount: z2.number().positive(),
+  amountType: z2.enum(["EXACT", "ANY"]).default("EXACT"),
+  description: z2.string().optional(),
+  currency: z2.string().default("NGN"),
+  expiresIn: z2.object({
+    duration: z2.number().positive(),
+    type: z2.string().min(1)
   }),
-  customer: z.object({
-    name: z.string().min(1),
-    email: z.string().email(),
-    phone: z.string().min(1)
+  customer: z2.object({
+    name: z2.string().min(1),
+    email: z2.string().email(),
+    phone: z2.string().min(1)
   })
 });
 var VirtualAccountsResource = class {
@@ -175,55 +624,55 @@ var VirtualAccountsResource = class {
 };
 
 // src/resources/virtual-cards.ts
-import { z as z2 } from "zod";
-var cardLimitsSchema = z2.object({
-  dailyLimit: z2.number().positive().optional(),
-  transactionLimit: z2.number().positive().optional()
+import { z as z3 } from "zod";
+var cardLimitsSchema = z3.object({
+  dailyLimit: z3.number().positive().optional(),
+  transactionLimit: z3.number().positive().optional()
 }).optional();
-var createCardSchema = z2.object({
-  customerId: z2.string().min(1),
-  currency: z2.string().default("USD"),
-  brand: z2.string().min(1),
-  amount: z2.number().positive(),
-  type: z2.string().default("virtual"),
-  reference: z2.string().min(1),
-  contactless: z2.boolean().optional(),
+var createCardSchema = z3.object({
+  customerId: z3.string().min(1),
+  currency: z3.string().default("USD"),
+  brand: z3.string().min(1),
+  amount: z3.number().positive(),
+  type: z3.string().default("virtual"),
+  reference: z3.string().min(1),
+  contactless: z3.boolean().optional(),
   cardLimits: cardLimitsSchema
 });
-var stablecoinFundingSchema = z2.object({
-  stablecoinCurrency: z2.string().default("USDT"),
-  stablecoinNetwork: z2.string().default("Tron"),
-  stablecoinChain: z2.string().default("TRC20")
+var stablecoinFundingSchema = z3.object({
+  stablecoinCurrency: z3.string().default("USDT"),
+  stablecoinNetwork: z3.string().default("Tron"),
+  stablecoinChain: z3.string().default("TRC20")
 });
 var createStablecoinCardSchema = createCardSchema.merge(stablecoinFundingSchema);
-var topUpSchema = z2.object({
-  amount: z2.number().positive(),
-  reference: z2.string().min(1).optional()
+var topUpSchema = z3.object({
+  amount: z3.number().positive(),
+  reference: z3.string().min(1).optional()
 });
 var topUpStablecoinSchema = topUpSchema.merge(stablecoinFundingSchema);
-var withdrawSchema = z2.object({
-  amount: z2.number().positive(),
-  reference: z2.string().min(1)
+var withdrawSchema = z3.object({
+  amount: z3.number().positive(),
+  reference: z3.string().min(1)
 });
-var referenceSchema = z2.object({
-  reference: z2.string().min(1)
+var referenceSchema2 = z3.object({
+  reference: z3.string().min(1)
 });
-var transactionsSchema = z2.object({
-  startDate: z2.string().min(1),
-  endDate: z2.string().min(1),
-  pageSize: z2.number().int().positive().optional(),
-  page: z2.number().int().positive().optional()
+var transactionsSchema = z3.object({
+  startDate: z3.string().min(1),
+  endDate: z3.string().min(1),
+  pageSize: z3.number().int().positive().optional(),
+  page: z3.number().int().positive().optional()
 });
-var updateContactSchema = z2.object({
-  email: z2.string().email().optional(),
-  mobile: z2.string().min(1).optional(),
-  billingDetails: z2.object({
-    address1: z2.string().min(1).optional(),
-    address2: z2.string().min(1).optional(),
-    city: z2.string().min(1).optional(),
-    state: z2.string().min(1).optional(),
-    zipcode: z2.string().min(1).optional(),
-    country: z2.string().min(1).optional()
+var updateContactSchema = z3.object({
+  email: z3.string().email().optional(),
+  mobile: z3.string().min(1).optional(),
+  billingDetails: z3.object({
+    address1: z3.string().min(1).optional(),
+    address2: z3.string().min(1).optional(),
+    city: z3.string().min(1).optional(),
+    state: z3.string().min(1).optional(),
+    zipcode: z3.string().min(1).optional(),
+    country: z3.string().min(1).optional()
   }).optional()
 });
 var VirtualCardsResource = class {
@@ -281,7 +730,7 @@ var VirtualCardsResource = class {
   }
   transactions(cardId, input) {
     const payload = transactionsSchema.parse(input);
-    const query = new URLSearchParams({
+    const query2 = new URLSearchParams({
       start_date: payload.startDate,
       end_date: payload.endDate,
       ...payload.pageSize ? { page_size: String(payload.pageSize) } : {},
@@ -289,23 +738,23 @@ var VirtualCardsResource = class {
     });
     return this.http.request(
       "GET",
-      `cards/${encodeURIComponent(cardId)}/transactions?${query.toString()}`
+      `cards/${encodeURIComponent(cardId)}/transactions?${query2.toString()}`
     );
   }
   freeze(cardId, input) {
-    const payload = referenceSchema.parse(input);
+    const payload = referenceSchema2.parse(input);
     return this.http.request("PATCH", `cards/${encodeURIComponent(cardId)}/freeze`, {
       ref: payload.reference
     });
   }
   unfreeze(cardId, input) {
-    const payload = referenceSchema.parse(input);
+    const payload = referenceSchema2.parse(input);
     return this.http.request("PATCH", `cards/${encodeURIComponent(cardId)}/unfreeze`, {
       ref: payload.reference
     });
   }
   terminate(cardId, input) {
-    const payload = referenceSchema.parse(input);
+    const payload = referenceSchema2.parse(input);
     return this.http.request("POST", `cards/${encodeURIComponent(cardId)}/terminate`, {
       ref: payload.reference
     });
@@ -376,11 +825,13 @@ function safeCompare(received, expected) {
 
 // src/payscribe.ts
 var Payscribe = class {
+  bills;
   virtualAccounts;
   virtualCards;
   webhooks;
   constructor(config) {
     const http = new HttpClient(config);
+    this.bills = new BillsResource(http);
     this.virtualAccounts = new VirtualAccountsResource(http);
     this.virtualCards = new VirtualCardsResource(http);
     this.webhooks = new WebhooksResource(config.secretKey);

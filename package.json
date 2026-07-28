@@ -1,7 +1,7 @@
 {
   "name": "@payscribe.co/sdk",
   "version": "0.3.0",
-  "description": "Node.js/TypeScript SDK and local Swagger UI playground for Payscribe virtual accounts and virtual cards.",
+  "description": "Node.js/TypeScript SDK and local Swagger UI playground for Payscribe virtual accounts, virtual cards, and bills payments.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -29,6 +29,8 @@
     "sdk",
     "virtual-accounts",
     "virtual-cards",
+    "bills",
+    "bill-payments",
     "cards",
     "payments"
   ],

@@ -333,6 +333,74 @@ type TopUpVirtualCardInput = {
       }
     },
 
+    bills: {
+      description:
+        "Bills payment SDK resource for lookup, validation, vend/payment, and requery flows.",
+      resource: "payscribe.bills",
+      groups: {
+        cable: [
+          "fetchBouquets({ service }) -> GET /bouquets?service",
+          "validateSmartCard({ service, account, planId, month }) -> POST /multichoice/validate",
+          "pay({ planId, customerName, account, service, reference, phone, email, month }) -> POST /multichoice/vend",
+          "topUp({ amount, customerName, account, service, reference, phone, email, month }) -> POST /multichoice/topup"
+        ],
+        data: [
+          "lookup({ network, category }) -> GET /data/lookup",
+          "vend({ plan, recipient, network, reference }) -> POST /data/vend"
+        ],
+        electricity: [
+          "validate({ meterNumber, meterType, amount, service }) -> POST /electricity/validate",
+          "pay({ meterNumber, meterType, amount, service, customerName, address, phone, email, reference }) -> POST /electricity/vend"
+        ],
+        airtime: [
+          "vend({ network, amount, recipient, ported, reference }) -> POST /airtime",
+          "bulkVend({ rows, reference }) -> POST /airtime"
+        ],
+        betting: [
+          "listProviders() -> GET /betting/list",
+          "lookup({ betId, customerId }) -> GET /betting/lookup",
+          "fundWallet({ betId, customerId, customerName, amount, reference }) -> POST /betting/vend"
+        ],
+        international: [
+          "countries() -> GET /international-bills/countries",
+          "providers({ iso }) -> GET /international-bills/providers",
+          "products({ iso, code }) -> GET /international-bills/products",
+          "rate({ iso, sku, amount }) -> GET /international-bills/rate",
+          "vend({ iso, providerCode, sku, amount, account, debitCurrency, reference }) -> POST /international-bills/vend"
+        ],
+        other: [
+          "internet.listServices()",
+          "internet.spectranetPinPlans()",
+          "internet.purchaseSpectranetPins({ planId, quantity, reference })",
+          "epins.list()",
+          "epins.purchase({ id, quantity, reference })",
+          "epins.lookupJambUser({ id, account })",
+          "epins.retrieve({ transactionId })",
+          "airtimeToWallet.lookup()",
+          "airtimeToWallet.process({ network, amount, phoneNumber, from, reference })",
+          "sms.send({ to, message, reference, senderId })",
+          "requery({ transactionId })"
+        ]
+      },
+      example: `
+await payscribe.bills.electricity.validate({
+  meterNumber: "45083082250",
+  meterType: "prepaid",
+  amount: 1000,
+  service: "phedc"
+});
+
+await payscribe.bills.electricity.pay({
+  meterNumber: "45083082250",
+  meterType: "prepaid",
+  amount: 1000,
+  service: "phedc",
+  customerName: "Ada Lovelace",
+  reference: "electricity_ref_123"
+});
+`.trim()
+    },
+
     webhooks: {
       verifySignature: {
         description:

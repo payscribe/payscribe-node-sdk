@@ -1,8 +1,8 @@
 # Payscribe SDK
 
-Node.js and TypeScript SDK for Payscribe virtual account collections and virtual card issuing, with a local Swagger UI playground and a typed consumer test app.
+Node.js and TypeScript SDK for Payscribe virtual account collections, virtual card issuing, and bills payments, with a local Swagger UI playground and a typed consumer test app.
 
-This SDK wraps the Payscribe virtual account and virtual card endpoints so integrators can call intent-based methods instead of manually building request URLs and payloads.
+This SDK wraps the Payscribe virtual account, virtual card, and bills payment endpoints so integrators can call intent-based methods instead of manually building request URLs and payloads.
 
 ## Features
 
@@ -16,6 +16,7 @@ This SDK wraps the Payscribe virtual account and virtual card endpoints so integ
 - Card top-up, withdrawal, replacement, freezing, unfreezing, and termination
 - Stablecoin-funded card creation and top-up
 - Card transaction lookup and cardholder contact updates
+- Bills payment lookup, validation, vending, and requery flows
 - Webhook signature verification
 - Typed request/response helpers for TypeScript users
 - Local Swagger UI playground for manual testing
@@ -388,6 +389,173 @@ const result = await payscribe.virtualCards.updateContact("card-uuid", {
 });
 ```
 
+## Bills Payments
+
+Bills are exposed under `payscribe.bills`, grouped by product category.
+
+### Cable TV
+
+```ts
+const bouquets = await payscribe.bills.cable.fetchBouquets({
+  service: "dstv"
+});
+
+const validation = await payscribe.bills.cable.validateSmartCard({
+  service: "dstv",
+  account: "8062415043",
+  month: 1,
+  planId: "PLAN_CODE"
+});
+
+const payment = await payscribe.bills.cable.pay({
+  planId: "PLAN_CODE",
+  customerName: "Ada Lovelace",
+  account: "8062415043",
+  service: "dstv",
+  reference: "cable_ref_123",
+  phone: "08199228811",
+  email: "ada@example.com",
+  month: 1
+});
+```
+
+### Data
+
+```ts
+const plans = await payscribe.bills.data.lookup({
+  network: "mtn",
+  category: "sme"
+});
+
+const data = await payscribe.bills.data.vend({
+  network: "mtn",
+  plan: "PSPLAN_177",
+  recipient: ["08169254598", "07038067493"],
+  reference: "data_ref_123"
+});
+```
+
+### Electricity
+
+```ts
+const meter = await payscribe.bills.electricity.validate({
+  meterNumber: "45083082250",
+  meterType: "prepaid",
+  amount: 1000,
+  service: "phedc"
+});
+
+const vend = await payscribe.bills.electricity.pay({
+  meterNumber: "45083082250",
+  meterType: "prepaid",
+  amount: 1000,
+  service: "phedc",
+  customerName: "Ada Lovelace",
+  phone: "07038067493",
+  reference: "electricity_ref_123"
+});
+```
+
+### Airtime
+
+```ts
+const airtime = await payscribe.bills.airtime.vend({
+  network: "mtn",
+  amount: 50,
+  recipient: "08169254598",
+  ported: false,
+  reference: "airtime_ref_123"
+});
+
+const bulkAirtime = await payscribe.bills.airtime.bulkVend({
+  rows: [
+    { phone: "08169254598", amount: 50, provider: "mtn", country: "NG" },
+    { phone: "08012345678", amount: 100, provider: "airtel", country: "NG" }
+  ],
+  reference: "bulk_airtime_ref_123"
+});
+```
+
+### Betting
+
+```ts
+const providers = await payscribe.bills.betting.listProviders();
+
+const account = await payscribe.bills.betting.lookup({
+  betId: "bet9ja",
+  customerId: "422984"
+});
+
+const funding = await payscribe.bills.betting.fundWallet({
+  betId: "bet9ja",
+  customerId: "422984",
+  customerName: "Ada Lovelace",
+  amount: 100,
+  reference: "betting_ref_123"
+});
+```
+
+### International Bills
+
+```ts
+const countries = await payscribe.bills.international.countries();
+
+const providers = await payscribe.bills.international.providers({
+  iso: "GH"
+});
+
+const products = await payscribe.bills.international.products({
+  iso: "GH",
+  code: "MTGH"
+});
+
+const rate = await payscribe.bills.international.rate({
+  iso: "GH",
+  sku: "GH_MT_TopUp",
+  amount: 1.2
+});
+
+const internationalVend = await payscribe.bills.international.vend({
+  iso: "GH",
+  providerCode: "MTGH",
+  sku: "GH_MT_TopUp",
+  amount: "1.5",
+  account: "233547011800",
+  debitCurrency: "ngn",
+  reference: "intl_ref_123"
+});
+```
+
+### Other Bills Helpers
+
+```ts
+await payscribe.bills.internet.listServices();
+await payscribe.bills.internet.spectranetPinPlans();
+await payscribe.bills.internet.purchaseSpectranetPins({
+  planId: "PSPLAN_1270",
+  quantity: 1,
+  reference: "spectranet_ref_123"
+});
+
+await payscribe.bills.epins.list();
+await payscribe.bills.epins.purchase({
+  id: "neco",
+  quantity: 1,
+  reference: "epin_ref_123"
+});
+
+await payscribe.bills.airtimeToWallet.lookup();
+await payscribe.bills.sms.send({
+  to: "08169254598",
+  message: "Hello Payscribe!",
+  reference: "sms_ref_123"
+});
+
+await payscribe.bills.requery({
+  transactionId: "transaction-id"
+});
+```
+
 ## Webhook Verification
 
 Payscribe webhooks include an `X-Payscribe-Signature` header. Verify it against the raw request body before processing the event.
@@ -456,6 +624,44 @@ If port `3000` is busy:
 PORT=3001 npm run dev
 ```
 
+The local playground documents virtual accounts, virtual cards, bills payments, and webhook verification.
+
+## Hosted Bills Checkout
+
+The repository includes a static checkout page for `checkout.payscribe.co`:
+
+```text
+hosted-checkout/index.html
+```
+
+Host that file from the checkout domain. It is frontend-only and must not contain a Payscribe secret key. Your backend should create checkout sessions, keep the secret key server-side, and call the SDK from trusted server routes.
+
+The checkout page expects these backend routes when `demoMode` is disabled:
+
+```text
+GET  /checkout/sessions/:sessionId
+POST /checkout/sessions/:sessionId/validate
+POST /checkout/sessions/:sessionId/confirm
+```
+
+At the bottom of `hosted-checkout/index.html`, set the API base URL and disable demo mode:
+
+```html
+<script>
+  window.PAYSCRIBE_CHECKOUT_CONFIG = {
+    apiBaseUrl: "https://api.payscribe.co",
+    demoMode: false
+  };
+</script>
+```
+
+Use URLs such as:
+
+```text
+https://checkout.payscribe.co/?session=checkout_session_id
+https://checkout.payscribe.co/checkout_session_id
+```
+
 ## Typed Consumer Test App
 
 `consumer-test/` is a separate TypeScript Node.js app that installs the published SDK from npm and imports it like a real external user.
@@ -483,6 +689,14 @@ Start the consumer server:
 ```bash
 npm start
 ```
+
+Open the consumer Swagger UI:
+
+```text
+http://localhost:4001/docs
+```
+
+The consumer Swagger UI calls the installed SDK package through the `consumer-test` Express server.
 
 In another terminal:
 

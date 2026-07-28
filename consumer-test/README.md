@@ -17,6 +17,18 @@ cp .env.example .env
 npm start
 ```
 
+Open Swagger UI:
+
+```text
+http://localhost:4001/docs
+```
+
+If port `4001` is busy:
+
+```bash
+PORT=4002 npm start
+```
+
 ## Typecheck
 
 ```bash

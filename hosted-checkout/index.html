@@ -1,0 +1,991 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Payscribe Bills Checkout</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f8fb;
+        --panel: #ffffff;
+        --panel-2: #f9fafc;
+        --text: #162033;
+        --muted: #637083;
+        --line: #dce2ea;
+        --brand: #0f766e;
+        --brand-dark: #0b5d57;
+        --accent: #2457c5;
+        --danger: #b42318;
+        --success: #067647;
+        --warning: #b54708;
+        --shadow: 0 18px 50px rgba(22, 32, 51, 0.12);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(246, 248, 251, 0.96)),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800' viewBox='0 0 1200 800'%3E%3Crect width='1200' height='800' fill='%23eef3f8'/%3E%3Cg fill='none' stroke='%23d6e1ea' stroke-width='2'%3E%3Cpath d='M0 140h1200M0 300h1200M0 460h1200M0 620h1200M140 0v800M320 0v800M500 0v800M680 0v800M860 0v800M1040 0v800'/%3E%3C/g%3E%3Cg fill='%23ffffff' opacity='.55'%3E%3Crect x='110' y='88' width='210' height='80' rx='12'/%3E%3Crect x='760' y='210' width='260' height='96' rx='12'/%3E%3Crect x='460' y='540' width='280' height='100' rx='12'/%3E%3C/g%3E%3C/svg%3E");
+        background-size: cover;
+        color: var(--text);
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button {
+        border: 0;
+        cursor: pointer;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: minmax(280px, 420px) minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .brand-pane {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 40px;
+        background: rgba(255, 255, 255, 0.72);
+        border-right: 1px solid rgba(220, 226, 234, 0.8);
+        backdrop-filter: blur(12px);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 800;
+        font-size: 20px;
+      }
+
+      .mark {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: var(--brand);
+        color: #ffffff;
+        font-weight: 900;
+      }
+
+      .intro {
+        max-width: 320px;
+      }
+
+      .intro h1 {
+        margin: 0 0 14px;
+        font-size: 34px;
+        line-height: 1.08;
+        letter-spacing: 0;
+      }
+
+      .intro p,
+      .footer-note {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .checkout-pane {
+        display: grid;
+        align-content: center;
+        padding: 32px;
+      }
+
+      .checkout {
+        width: min(100%, 920px);
+        margin: 0 auto;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .checkout-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 22px 24px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .merchant-name {
+        margin: 0;
+        font-size: 17px;
+      }
+
+      .session-status {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .amount {
+        text-align: right;
+      }
+
+      .amount-label {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .amount-value {
+        font-weight: 800;
+        font-size: 20px;
+      }
+
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .step {
+        padding: 14px 16px;
+        color: var(--muted);
+        border-right: 1px solid var(--line);
+        font-size: 13px;
+        background: var(--panel-2);
+      }
+
+      .step:last-child {
+        border-right: 0;
+      }
+
+      .step.active {
+        color: var(--brand);
+        background: #ffffff;
+        font-weight: 800;
+      }
+
+      .content {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        min-height: 540px;
+      }
+
+      .form-area {
+        padding: 24px;
+      }
+
+      .summary {
+        padding: 24px;
+        border-left: 1px solid var(--line);
+        background: var(--panel-2);
+      }
+
+      .section-title {
+        margin: 0 0 16px;
+        font-size: 20px;
+      }
+
+      .category-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .category {
+        min-height: 92px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #ffffff;
+        text-align: left;
+      }
+
+      .category.active {
+        border-color: var(--brand);
+        box-shadow: inset 0 0 0 1px var(--brand);
+      }
+
+      .category strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .category span {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .field-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .field {
+        display: grid;
+        gap: 7px;
+      }
+
+      .field.full {
+        grid-column: 1 / -1;
+      }
+
+      label {
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      input,
+      select {
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--text);
+        background: #ffffff;
+      }
+
+      input:focus,
+      select:focus {
+        outline: 3px solid rgba(15, 118, 110, 0.18);
+        border-color: var(--brand);
+      }
+
+      .actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 22px;
+      }
+
+      .btn {
+        min-height: 44px;
+        padding: 0 16px;
+        border-radius: 8px;
+        font-weight: 800;
+      }
+
+      .btn.primary {
+        background: var(--brand);
+        color: #ffffff;
+      }
+
+      .btn.primary:hover {
+        background: var(--brand-dark);
+      }
+
+      .btn.secondary {
+        background: #ffffff;
+        color: var(--text);
+        border: 1px solid var(--line);
+      }
+
+      .btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.62;
+      }
+
+      .summary h2 {
+        margin: 0 0 16px;
+        font-size: 17px;
+      }
+
+      .line-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .line-item strong {
+        color: var(--text);
+        text-align: right;
+      }
+
+      .notice {
+        margin-top: 16px;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .notice.info {
+        background: #eff6ff;
+        color: var(--accent);
+      }
+
+      .notice.error {
+        background: #fef3f2;
+        color: var(--danger);
+      }
+
+      .notice.success {
+        background: #ecfdf3;
+        color: var(--success);
+      }
+
+      .review-box {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel-2);
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      @media (max-width: 860px) {
+        .shell,
+        .content {
+          grid-template-columns: 1fr;
+        }
+
+        .brand-pane {
+          gap: 28px;
+          padding: 28px;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .checkout-pane {
+          padding: 18px;
+        }
+
+        .summary {
+          border-left: 0;
+          border-top: 1px solid var(--line);
+        }
+      }
+
+      @media (max-width: 560px) {
+        .checkout-header,
+        .actions {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .amount {
+          text-align: left;
+        }
+
+        .steps {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .step {
+          border-bottom: 1px solid var(--line);
+        }
+
+        .category-grid,
+        .field-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <aside class="brand-pane">
+        <div class="brand">
+          <div class="mark">P</div>
+          <span>Payscribe</span>
+        </div>
+        <div class="intro">
+          <h1>Complete your bill payment</h1>
+          <p>
+            Pay electricity, cable TV, airtime, and data from one secure
+            checkout session.
+          </p>
+        </div>
+        <p class="footer-note">
+          Powered by Payscribe Checkout. Your payment is processed securely.
+        </p>
+      </aside>
+
+      <section class="checkout-pane">
+        <div class="checkout">
+          <header class="checkout-header">
+            <div>
+              <h2 class="merchant-name" id="merchantName">Merchant checkout</h2>
+              <span class="session-status" id="sessionStatus">Session loading</span>
+            </div>
+            <div class="amount">
+              <span class="amount-label">Estimated total</span>
+              <span class="amount-value" id="amountValue">NGN 0</span>
+            </div>
+          </header>
+
+          <nav class="steps" aria-label="Checkout steps">
+            <div class="step active" data-step-label="category">1. Bill</div>
+            <div class="step" data-step-label="details">2. Details</div>
+            <div class="step" data-step-label="review">3. Review</div>
+            <div class="step" data-step-label="result">4. Result</div>
+          </nav>
+
+          <div class="content">
+            <section class="form-area">
+              <div id="message" class="notice info">
+                Select a bill type to continue.
+              </div>
+              <div id="view"></div>
+            </section>
+
+            <aside class="summary">
+              <h2>Checkout summary</h2>
+              <div class="line-item">
+                <span>Session</span>
+                <strong id="summarySession">pending</strong>
+              </div>
+              <div class="line-item">
+                <span>Bill type</span>
+                <strong id="summaryCategory">Not selected</strong>
+              </div>
+              <div class="line-item">
+                <span>Provider</span>
+                <strong id="summaryProvider">Not selected</strong>
+              </div>
+              <div class="line-item">
+                <span>Recipient</span>
+                <strong id="summaryRecipient">Not entered</strong>
+              </div>
+              <div class="line-item">
+                <span>Reference</span>
+                <strong id="summaryReference">Not generated</strong>
+              </div>
+              <div class="notice info">
+                This page talks only to your checkout backend. Secret API keys
+                must stay on the server.
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      window.PAYSCRIBE_CHECKOUT_CONFIG = {
+        apiBaseUrl: "https://api.payscribe.co",
+        demoMode: true
+      };
+
+      const config = window.PAYSCRIBE_CHECKOUT_CONFIG;
+      const state = {
+        step: "category",
+        sessionId: getSessionId(),
+        session: null,
+        category: "",
+        form: {},
+        validation: null,
+        result: null
+      };
+
+      const categories = [
+        {
+          id: "electricity",
+          title: "Electricity",
+          copy: "Validate meter details and vend prepaid or postpaid bills."
+        },
+        {
+          id: "cable",
+          title: "Cable TV",
+          copy: "Fetch bouquets, validate smart cards, and renew subscriptions."
+        },
+        {
+          id: "data",
+          title: "Data",
+          copy: "Select network plans and vend data to one or many numbers."
+        },
+        {
+          id: "airtime",
+          title: "Airtime",
+          copy: "Buy airtime for Nigerian mobile networks."
+        }
+      ];
+
+      const demoOptions = {
+        electricity: {
+          providers: [
+            { id: "ikedc", label: "IKEDC" },
+            { id: "ekedc", label: "EKEDC" },
+            { id: "phedc", label: "PHEDC" },
+            { id: "aedc", label: "AEDC" }
+          ]
+        },
+        cable: {
+          providers: [
+            { id: "dstv", label: "DSTV" },
+            { id: "gotv", label: "GOTV" },
+            { id: "startimes", label: "Startimes" }
+          ],
+          plans: [
+            { id: "PLAN_COMPACT", label: "Compact", amount: 15000 },
+            { id: "PLAN_CONFAM", label: "Confam", amount: 9300 }
+          ]
+        },
+        data: {
+          providers: [
+            { id: "mtn", label: "MTN" },
+            { id: "airtel", label: "Airtel" },
+            { id: "glo", label: "Glo" },
+            { id: "9mobile", label: "9mobile" }
+          ],
+          plans: [
+            { id: "PSPLAN_177", label: "1GB Data", amount: 500 },
+            { id: "PSPLAN_255", label: "3GB Data", amount: 1200 }
+          ]
+        },
+        airtime: {
+          providers: [
+            { id: "mtn", label: "MTN" },
+            { id: "airtel", label: "Airtel" },
+            { id: "glo", label: "Glo" },
+            { id: "9mobile", label: "9mobile" }
+          ]
+        }
+      };
+
+      init();
+
+      async function init() {
+        setMessage("Loading checkout session.", "info");
+        state.session = await loadSession();
+        document.getElementById("merchantName").textContent =
+          state.session.merchantName || "Payscribe merchant";
+        document.getElementById("sessionStatus").textContent =
+          state.session.status || "Open session";
+        render();
+      }
+
+      async function loadSession() {
+        if (!state.sessionId || config.demoMode) {
+          return {
+            id: state.sessionId || "demo_session",
+            status: "Open session",
+            merchantName: "Demo merchant",
+            currency: "NGN",
+            allowedCategories: categories.map((category) => category.id)
+          };
+        }
+
+        return request(`/checkout/sessions/${state.sessionId}`);
+      }
+
+      function render() {
+        updateSteps();
+        updateSummary();
+
+        if (state.step === "category") renderCategory();
+        if (state.step === "details") renderDetails();
+        if (state.step === "review") renderReview();
+        if (state.step === "result") renderResult();
+      }
+
+      function renderCategory() {
+        setMessage("Select the type of bill this customer wants to pay.", "info");
+        document.getElementById("view").innerHTML = `
+          <h2 class="section-title">Choose bill type</h2>
+          <div class="category-grid">
+            ${categories
+              .filter((category) =>
+                state.session.allowedCategories.includes(category.id)
+              )
+              .map(
+                (category) => `
+                  <button class="category ${
+                    state.category === category.id ? "active" : ""
+                  }" data-category="${category.id}">
+                    <strong>${category.title}</strong>
+                    <span>${category.copy}</span>
+                  </button>
+                `
+              )
+              .join("")}
+          </div>
+          <div class="actions">
+            <button class="btn secondary" disabled>Back</button>
+            <button class="btn primary" id="next" ${
+              state.category ? "" : "disabled"
+            }>Continue</button>
+          </div>
+        `;
+
+        document.querySelectorAll("[data-category]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.category = button.dataset.category;
+            state.form = { reference: makeReference(state.category) };
+            state.validation = null;
+            render();
+          });
+        });
+
+        document.getElementById("next").addEventListener("click", () => {
+          state.step = "details";
+          render();
+        });
+      }
+
+      function renderDetails() {
+        setMessage("Enter the bill details. Validation runs before payment.", "info");
+        document.getElementById("view").innerHTML = `
+          <h2 class="section-title">${categoryTitle()} details</h2>
+          <form id="detailsForm" class="field-grid">
+            ${detailsFields()}
+          </form>
+          <div class="actions">
+            <button class="btn secondary" id="back">Back</button>
+            <button class="btn primary" id="validate">Validate</button>
+          </div>
+        `;
+
+        document.getElementById("back").addEventListener("click", () => {
+          state.step = "category";
+          render();
+        });
+        document.getElementById("validate").addEventListener("click", validate);
+      }
+
+      function detailsFields() {
+        if (state.category === "electricity") {
+          return `
+            ${selectField("service", "Provider", demoOptions.electricity.providers)}
+            ${selectField("meterType", "Meter type", [
+              { id: "prepaid", label: "Prepaid" },
+              { id: "postpaid", label: "Postpaid" }
+            ])}
+            ${inputField("meterNumber", "Meter number", "45083082250")}
+            ${inputField("amount", "Amount", "1000", "number")}
+            ${inputField("phone", "Phone", "07038067493")}
+            ${inputField("reference", "Reference", state.form.reference)}
+          `;
+        }
+
+        if (state.category === "cable") {
+          return `
+            ${selectField("service", "Provider", demoOptions.cable.providers)}
+            ${selectField("planId", "Bouquet", demoOptions.cable.plans)}
+            ${inputField("account", "Smart card number", "8062415043")}
+            ${inputField("month", "Months", "1", "number")}
+            ${inputField("phone", "Phone", "08199228811")}
+            ${inputField("reference", "Reference", state.form.reference)}
+          `;
+        }
+
+        if (state.category === "data") {
+          return `
+            ${selectField("network", "Network", demoOptions.data.providers)}
+            ${selectField("plan", "Plan", demoOptions.data.plans)}
+            ${inputField("recipient", "Recipient phone", "08169254598")}
+            ${inputField("reference", "Reference", state.form.reference)}
+          `;
+        }
+
+        return `
+          ${selectField("network", "Network", demoOptions.airtime.providers)}
+          ${inputField("amount", "Amount", "50", "number")}
+          ${inputField("recipient", "Recipient phone", "08169254598")}
+          ${selectField("ported", "Ported number", [
+            { id: "false", label: "No" },
+            { id: "true", label: "Yes" }
+          ])}
+          ${inputField("reference", "Reference", state.form.reference)}
+        `;
+      }
+
+      function inputField(name, label, placeholder, type = "text") {
+        const value = state.form[name] || "";
+        return `
+          <div class="field">
+            <label for="${name}">${label}</label>
+            <input id="${name}" name="${name}" type="${type}" placeholder="${placeholder}" value="${value}" />
+          </div>
+        `;
+      }
+
+      function selectField(name, label, options) {
+        const current = state.form[name] || "";
+        return `
+          <div class="field">
+            <label for="${name}">${label}</label>
+            <select id="${name}" name="${name}">
+              <option value="">Select ${label.toLowerCase()}</option>
+              ${options
+                .map(
+                  (option) => `
+                    <option value="${option.id}" ${
+                      current === option.id ? "selected" : ""
+                    }>${option.label}</option>
+                  `
+                )
+                .join("")}
+            </select>
+          </div>
+        `;
+      }
+
+      async function validate(event) {
+        event.preventDefault();
+        state.form = readForm("detailsForm");
+
+        try {
+          setMessage("Validating details.", "info");
+          state.validation = await callBackend("validate", validationPayload());
+          state.step = "review";
+          render();
+        } catch (error) {
+          setMessage(error.message, "error");
+        }
+      }
+
+      function renderReview() {
+        setMessage("Review the details before confirming payment.", "info");
+        document.getElementById("view").innerHTML = `
+          <h2 class="section-title">Review payment</h2>
+          <div class="review-box">
+            <div class="line-item"><span>Bill type</span><strong>${categoryTitle()}</strong></div>
+            <div class="line-item"><span>Provider</span><strong>${providerLabel()}</strong></div>
+            <div class="line-item"><span>Recipient</span><strong>${recipientValue()}</strong></div>
+            <div class="line-item"><span>Customer</span><strong>${validatedCustomer()}</strong></div>
+            <div class="line-item"><span>Amount</span><strong>${amountDisplay()}</strong></div>
+            <div class="line-item"><span>Reference</span><strong>${state.form.reference}</strong></div>
+          </div>
+          <div class="actions">
+            <button class="btn secondary" id="back">Back</button>
+            <button class="btn primary" id="confirm">Confirm payment</button>
+          </div>
+        `;
+
+        document.getElementById("back").addEventListener("click", () => {
+          state.step = "details";
+          render();
+        });
+        document.getElementById("confirm").addEventListener("click", confirmPayment);
+      }
+
+      async function confirmPayment() {
+        try {
+          setMessage("Processing payment.", "info");
+          state.result = await callBackend("confirm", confirmPayload());
+          state.step = "result";
+          render();
+        } catch (error) {
+          setMessage(error.message, "error");
+        }
+      }
+
+      function renderResult() {
+        const status = state.result?.status || "pending";
+        const isSuccess = status === true || status === "success";
+        setMessage(
+          isSuccess ? "Payment completed successfully." : "Payment submitted for processing.",
+          isSuccess ? "success" : "info"
+        );
+        document.getElementById("view").innerHTML = `
+          <h2 class="section-title">${isSuccess ? "Payment successful" : "Payment pending"}</h2>
+          <div class="review-box">
+            <div class="line-item"><span>Status</span><strong>${String(status)}</strong></div>
+            <div class="line-item"><span>Reference</span><strong>${state.form.reference}</strong></div>
+            <div class="line-item"><span>Transaction ID</span><strong>${transactionId()}</strong></div>
+            <div class="line-item"><span>Token</span><strong>${electricityToken()}</strong></div>
+          </div>
+          <div class="actions">
+            <button class="btn secondary" id="newPayment">New payment</button>
+            <button class="btn primary" id="done">Done</button>
+          </div>
+        `;
+
+        document.getElementById("newPayment").addEventListener("click", () => {
+          state.step = "category";
+          state.category = "";
+          state.form = {};
+          state.validation = null;
+          state.result = null;
+          render();
+        });
+        document.getElementById("done").addEventListener("click", () => {
+          const redirectUrl = state.session.redirectUrl;
+          if (redirectUrl) window.location.href = redirectUrl;
+        });
+      }
+
+      async function callBackend(action, payload) {
+        if (config.demoMode) {
+          await wait(600);
+          if (action === "validate") {
+            return {
+              status: true,
+              customerName: "Ada Lovelace",
+              address: "12 Broad Street"
+            };
+          }
+          return {
+            status: "success",
+            transId: "PS_" + Math.random().toString(36).slice(2, 10),
+            token: state.category === "electricity" ? "1234-5678-9012-3456" : ""
+          };
+        }
+
+        return request(`/checkout/sessions/${state.sessionId}/${action}`, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+      }
+
+      async function request(path, options = {}) {
+        const response = await fetch(config.apiBaseUrl + path, {
+          ...options,
+          headers: {
+            "Content-Type": "application/json",
+            ...(options.headers || {})
+          }
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(data?.message || data?.description || "Request failed");
+        }
+        return data;
+      }
+
+      function validationPayload() {
+        if (state.category === "electricity") {
+          return {
+            category: state.category,
+            meterNumber: state.form.meterNumber,
+            meterType: state.form.meterType,
+            amount: Number(state.form.amount),
+            service: state.form.service
+          };
+        }
+
+        if (state.category === "cable") {
+          return {
+            category: state.category,
+            service: state.form.service,
+            account: state.form.account,
+            month: Number(state.form.month || 1),
+            planId: state.form.planId
+          };
+        }
+
+        return {
+          category: state.category,
+          ...state.form
+        };
+      }
+
+      function confirmPayload() {
+        return {
+          category: state.category,
+          details: state.form,
+          validation: state.validation
+        };
+      }
+
+      function readForm(id) {
+        const form = document.getElementById(id);
+        return Object.fromEntries(new FormData(form).entries());
+      }
+
+      function updateSteps() {
+        document.querySelectorAll("[data-step-label]").forEach((step) => {
+          step.classList.toggle("active", step.dataset.stepLabel === state.step);
+        });
+      }
+
+      function updateSummary() {
+        document.getElementById("summarySession").textContent =
+          state.session?.id || state.sessionId || "pending";
+        document.getElementById("summaryCategory").textContent =
+          categoryTitle() || "Not selected";
+        document.getElementById("summaryProvider").textContent =
+          providerLabel() || "Not selected";
+        document.getElementById("summaryRecipient").textContent =
+          recipientValue() || "Not entered";
+        document.getElementById("summaryReference").textContent =
+          state.form.reference || "Not generated";
+        document.getElementById("amountValue").textContent = amountDisplay();
+      }
+
+      function setMessage(message, type) {
+        const element = document.getElementById("message");
+        element.textContent = message;
+        element.className = `notice ${type}`;
+      }
+
+      function getSessionId() {
+        const url = new URL(window.location.href);
+        return url.searchParams.get("session") || window.location.pathname.split("/").filter(Boolean)[0] || "";
+      }
+
+      function makeReference(prefix) {
+        return `${prefix}_${Date.now()}`;
+      }
+
+      function categoryTitle() {
+        return categories.find((category) => category.id === state.category)?.title || "";
+      }
+
+      function providerLabel() {
+        const options = demoOptions[state.category]?.providers || [];
+        const provider = state.form.service || state.form.network;
+        return options.find((option) => option.id === provider)?.label || provider || "";
+      }
+
+      function recipientValue() {
+        return (
+          state.form.meterNumber ||
+          state.form.account ||
+          state.form.recipient ||
+          "Not entered"
+        );
+      }
+
+      function amountDisplay() {
+        const currency = state.session?.currency || "NGN";
+        const amount =
+          state.form.amount ||
+          demoOptions.cable.plans.find((plan) => plan.id === state.form.planId)?.amount ||
+          demoOptions.data.plans.find((plan) => plan.id === state.form.plan)?.amount ||
+          0;
+        return `${currency} ${Number(amount || 0).toLocaleString()}`;
+      }
+
+      function validatedCustomer() {
+        return state.validation?.customerName || state.validation?.customer_name || "Validated customer";
+      }
+
+      function transactionId() {
+        return state.result?.transId || state.result?.trans_id || "pending";
+      }
+
+      function electricityToken() {
+        return state.result?.token || "Not applicable";
+      }
+
+      function wait(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+    </script>
+  </body>
+</html>

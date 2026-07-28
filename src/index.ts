@@ -1,6 +1,37 @@
 export { Payscribe } from "./payscribe.js";
 export { PayscribeApiError } from "./errors.js";
 export type {
+  BettingLookupInput,
+  BillNetwork,
+  BillsResponse,
+  BulkAirtimeInput,
+  BulkAirtimeRow,
+  CableService,
+  DataLookupInput,
+  ElectricityService,
+  FetchCableBouquetsInput,
+  FundBettingWalletInput,
+  InternationalProductsInput,
+  InternationalProvidersInput,
+  InternationalRateInput,
+  LookupJambUserInput,
+  MeterType,
+  PayCableInput,
+  PayElectricityInput,
+  ProcessAirtimeToWalletInput,
+  PurchaseEPinInput,
+  PurchaseSpectranetPinsInput,
+  RequeryTransactionInput,
+  RetrieveEPinInput,
+  SendBulkSmsInput,
+  TopUpCableInput,
+  ValidateCableSmartCardInput,
+  ValidateElectricityInput,
+  VendAirtimeInput,
+  VendDataInput,
+  VendInternationalBillInput
+} from "./types/bills.js";
+export type {
   PayscribeConfig,
   PayscribeEnvironment,
   PayscribeRequestOptions

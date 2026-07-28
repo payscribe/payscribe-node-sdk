@@ -101,6 +101,143 @@ app.patch("/api/virtual-cards/:cardId/contact", asyncHandler(async (req, res) =>
   res.json(await payscribe.virtualCards.updateContact(pathParam(req.params.cardId), req.body));
 }));
 
+app.get("/api/bills/cable/bouquets", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.cable.fetchBouquets({ service: String(req.query.service ?? "") }));
+}));
+
+app.post("/api/bills/cable/validate", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.cable.validateSmartCard(req.body));
+}));
+
+app.post("/api/bills/cable/pay", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.cable.pay(req.body));
+}));
+
+app.post("/api/bills/cable/topup", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.cable.topUp(req.body));
+}));
+
+app.get("/api/bills/internet/services", asyncHandler(async (_req, res) => {
+  res.json(await payscribe.bills.internet.listServices());
+}));
+
+app.get("/api/bills/internet/spectranet/pins/plans", asyncHandler(async (_req, res) => {
+  res.json(await payscribe.bills.internet.spectranetPinPlans());
+}));
+
+app.post("/api/bills/internet/spectranet/pins", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.internet.purchaseSpectranetPins(req.body));
+}));
+
+app.get("/api/bills/data/lookup", asyncHandler(async (req, res) => {
+  res.json(
+    await payscribe.bills.data.lookup({
+      network: req.query.network ? String(req.query.network) : undefined,
+      category: req.query.category ? String(req.query.category) : undefined
+    })
+  );
+}));
+
+app.post("/api/bills/data/vend", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.data.vend(req.body));
+}));
+
+app.get("/api/bills/epins", asyncHandler(async (_req, res) => {
+  res.json(await payscribe.bills.epins.list());
+}));
+
+app.post("/api/bills/epins", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.epins.purchase(req.body));
+}));
+
+app.post("/api/bills/epins/jamb/lookup", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.epins.lookupJambUser(req.body));
+}));
+
+app.get("/api/bills/epins/retrieve", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.epins.retrieve({ transactionId: String(req.query.transactionId ?? "") }));
+}));
+
+app.post("/api/bills/airtime-to-wallet/lookup", asyncHandler(async (_req, res) => {
+  res.json(await payscribe.bills.airtimeToWallet.lookup());
+}));
+
+app.post("/api/bills/airtime-to-wallet/process", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.airtimeToWallet.process(req.body));
+}));
+
+app.post("/api/bills/electricity/validate", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.electricity.validate(req.body));
+}));
+
+app.post("/api/bills/electricity/pay", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.electricity.pay(req.body));
+}));
+
+app.post("/api/bills/sms", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.sms.send(req.body));
+}));
+
+app.get("/api/bills/betting/providers", asyncHandler(async (_req, res) => {
+  res.json(await payscribe.bills.betting.listProviders());
+}));
+
+app.get("/api/bills/betting/lookup", asyncHandler(async (req, res) => {
+  res.json(
+    await payscribe.bills.betting.lookup({
+      betId: String(req.query.betId ?? ""),
+      customerId: String(req.query.customerId ?? "")
+    })
+  );
+}));
+
+app.post("/api/bills/betting/fund", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.betting.fundWallet(req.body));
+}));
+
+app.post("/api/bills/airtime", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.airtime.vend(req.body));
+}));
+
+app.post("/api/bills/airtime/bulk", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.airtime.bulkVend(req.body));
+}));
+
+app.get("/api/bills/international/countries", asyncHandler(async (_req, res) => {
+  res.json(await payscribe.bills.international.countries());
+}));
+
+app.get("/api/bills/international/providers", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.international.providers({ iso: String(req.query.iso ?? "") }));
+}));
+
+app.get("/api/bills/international/products", asyncHandler(async (req, res) => {
+  res.json(
+    await payscribe.bills.international.products({
+      iso: String(req.query.iso ?? ""),
+      code: String(req.query.code ?? "")
+    })
+  );
+}));
+
+app.get("/api/bills/international/rate", asyncHandler(async (req, res) => {
+  res.json(
+    await payscribe.bills.international.rate({
+      iso: String(req.query.iso ?? ""),
+      sku: String(req.query.sku ?? ""),
+      amount: String(req.query.amount ?? "")
+    })
+  );
+}));
+
+app.post("/api/bills/international/vend", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.international.vend(req.body));
+}));
+
+app.get("/api/bills/requery", asyncHandler(async (req, res) => {
+  res.json(await payscribe.bills.requery({ transactionId: String(req.query.transactionId ?? "") }));
+}));
+
 app.post("/api/webhooks/verify", (req, res) => {
   const rawBody = String(req.body.rawBody ?? "");
   const signature = String(req.body.signature ?? "");

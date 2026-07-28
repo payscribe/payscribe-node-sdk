@@ -23,6 +23,231 @@ declare class HttpClient {
     request<T>(method: HttpMethod, path: string, body?: unknown, options?: PayscribeRequestOptions): Promise<T>;
 }
 
+type BillNetwork = "mtn" | "glo" | "airtel" | "9mobile" | string;
+type CableService = "gotv" | "dstv" | "startimes" | "dstvshowmax" | string;
+type MeterType = "prepaid" | "postpaid" | string;
+type ElectricityService = "ikedc" | "ekedc" | "eedc" | "phedc" | "aedc" | "ibedc" | "kedco" | "jed" | string;
+type BillsResponse<T = Record<string, unknown>> = PayscribeResponse<{
+    details?: T;
+}>;
+type FetchCableBouquetsInput = {
+    service: CableService;
+};
+type ValidateCableSmartCardInput = {
+    service: CableService;
+    account: string;
+    planId: string;
+    month?: number;
+};
+type PayCableInput = {
+    planId: string;
+    customerName: string;
+    account: string;
+    service: CableService;
+    reference: string;
+    phone?: string;
+    email?: string;
+    month?: number;
+};
+type TopUpCableInput = {
+    amount: number | string;
+    customerName: string;
+    account: string;
+    service: CableService;
+    reference: string;
+    phone?: string;
+    email?: string;
+    month?: number;
+};
+type DataLookupInput = {
+    network?: BillNetwork;
+    category?: string;
+};
+type VendDataInput = {
+    plan: string;
+    recipient: string | string[];
+    network: BillNetwork;
+    reference?: string;
+};
+type PurchaseSpectranetPinsInput = {
+    planId: string;
+    quantity: number;
+    reference: string;
+};
+type PurchaseEPinInput = {
+    id: string;
+    quantity: number;
+    reference: string;
+};
+type LookupJambUserInput = {
+    id: number | string;
+    account: string;
+};
+type RetrieveEPinInput = {
+    transactionId: string;
+};
+type ProcessAirtimeToWalletInput = {
+    network: BillNetwork;
+    amount: number | string;
+    phoneNumber: string;
+    from: string;
+    reference?: string;
+};
+type ValidateElectricityInput = {
+    meterNumber: string;
+    meterType: MeterType;
+    amount: number | string;
+    service: ElectricityService;
+};
+type PayElectricityInput = ValidateElectricityInput & {
+    customerName: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    reference?: string;
+};
+type RequeryTransactionInput = {
+    transactionId: string;
+};
+type SendBulkSmsInput = {
+    to: string;
+    message: string;
+    reference?: string;
+    senderId?: string;
+};
+type BettingLookupInput = {
+    betId: string;
+    customerId: string;
+};
+type FundBettingWalletInput = BettingLookupInput & {
+    customerName: string;
+    amount: number | string;
+    reference: string;
+};
+type VendAirtimeInput = {
+    network: BillNetwork;
+    amount: number | string;
+    recipient: string | string[];
+    ported?: boolean;
+    reference?: string;
+};
+type BulkAirtimeRow = {
+    phone: string;
+    amount: number;
+    provider: BillNetwork;
+    country?: string;
+    reference?: string;
+};
+type BulkAirtimeInput = {
+    rows: BulkAirtimeRow[];
+    reference?: string;
+};
+type InternationalProvidersInput = {
+    iso: string;
+};
+type InternationalProductsInput = {
+    iso: string;
+    code: string;
+};
+type InternationalRateInput = {
+    iso: string;
+    sku: string;
+    amount: number | string;
+};
+type VendInternationalBillInput = {
+    iso: string;
+    providerCode: string;
+    sku: string;
+    amount: number | string;
+    account: string;
+    debitCurrency?: string;
+    reference: string;
+};
+
+declare class BillsResource {
+    private readonly http;
+    readonly cable: CableBillsResource;
+    readonly internet: InternetBillsResource;
+    readonly data: DataBillsResource;
+    readonly epins: EPinBillsResource;
+    readonly airtimeToWallet: AirtimeToWalletBillsResource;
+    readonly electricity: ElectricityBillsResource;
+    readonly sms: SmsBillsResource;
+    readonly betting: BettingBillsResource;
+    readonly airtime: AirtimeBillsResource;
+    readonly international: InternationalBillsResource;
+    constructor(http: HttpClient);
+    requery(input: RequeryTransactionInput): Promise<BillsResponse>;
+}
+declare class CableBillsResource {
+    private readonly http;
+    constructor(http: HttpClient);
+    fetchBouquets(input: FetchCableBouquetsInput): Promise<BillsResponse>;
+    validateSmartCard(input: ValidateCableSmartCardInput): Promise<BillsResponse>;
+    pay(input: PayCableInput): Promise<BillsResponse>;
+    topUp(input: TopUpCableInput): Promise<BillsResponse>;
+}
+declare class InternetBillsResource {
+    private readonly http;
+    constructor(http: HttpClient);
+    listServices(): Promise<BillsResponse>;
+    spectranetPinPlans(): Promise<BillsResponse>;
+    purchaseSpectranetPins(input: PurchaseSpectranetPinsInput): Promise<BillsResponse>;
+}
+declare class DataBillsResource {
+    private readonly http;
+    constructor(http: HttpClient);
+    lookup(input?: DataLookupInput): Promise<BillsResponse>;
+    vend(input: VendDataInput): Promise<BillsResponse>;
+}
+declare class EPinBillsResource {
+    private readonly http;
+    constructor(http: HttpClient);
+    list(): Promise<BillsResponse>;
+    purchase(input: PurchaseEPinInput): Promise<BillsResponse>;
+    lookupJambUser(input: LookupJambUserInput): Promise<BillsResponse>;
+    retrieve(input: RetrieveEPinInput): Promise<BillsResponse>;
+}
+declare class AirtimeToWalletBillsResource {
+    private readonly http;
+    constructor(http: HttpClient);
+    lookup(): Promise<BillsResponse>;
+    process(input: ProcessAirtimeToWalletInput): Promise<BillsResponse>;
+}
+declare class ElectricityBillsResource {
+    private readonly http;
+    constructor(http: HttpClient);
+    validate(input: ValidateElectricityInput): Promise<BillsResponse>;
+    pay(input: PayElectricityInput): Promise<BillsResponse>;
+}
+declare class SmsBillsResource {
+    private readonly http;
+    constructor(http: HttpClient);
+    send(input: SendBulkSmsInput): Promise<BillsResponse>;
+}
+declare class BettingBillsResource {
+    private readonly http;
+    constructor(http: HttpClient);
+    listProviders(): Promise<BillsResponse>;
+    lookup(input: BettingLookupInput): Promise<BillsResponse>;
+    fundWallet(input: FundBettingWalletInput): Promise<BillsResponse>;
+}
+declare class AirtimeBillsResource {
+    private readonly http;
+    constructor(http: HttpClient);
+    vend(input: VendAirtimeInput): Promise<BillsResponse>;
+    bulkVend(input: BulkAirtimeInput): Promise<BillsResponse>;
+}
+declare class InternationalBillsResource {
+    private readonly http;
+    constructor(http: HttpClient);
+    countries(): Promise<BillsResponse>;
+    providers(input: InternationalProvidersInput): Promise<BillsResponse>;
+    products(input: InternationalProductsInput): Promise<BillsResponse>;
+    rate(input: InternationalRateInput): Promise<BillsResponse>;
+    vend(input: VendInternationalBillInput): Promise<BillsResponse>;
+}
+
 type BankCode = "9psb" | "palmpay" | string;
 type AmountType = "EXACT" | "ANY";
 type DurationType = "minutes" | "minute" | "hours" | "hour";
@@ -301,6 +526,7 @@ declare class WebhooksResource {
 }
 
 declare class Payscribe {
+    readonly bills: BillsResource;
     readonly virtualAccounts: VirtualAccountsResource;
     readonly virtualCards: VirtualCardsResource;
     readonly webhooks: WebhooksResource;
@@ -313,4 +539,4 @@ declare class PayscribeApiError extends Error {
     constructor(message: string, statusCode: number, response: unknown);
 }
 
-export { type AmountType, type BankCode, type CardBrand, type CardCurrency, type CardLimitsInput, type CardType, type ConfirmVirtualAccountPaymentInput, type CreateDynamicVirtualAccountInput, type CreateStablecoinVirtualCardInput, type CreateStaticVirtualAccountInput, type CreateVirtualCardInput, type GetVirtualCardTransactionsInput, Payscribe, PayscribeApiError, type PayscribeConfig, type PayscribeEnvironment, type PayscribeRequestOptions, type PayscribeWebhookEvent, type SimulateVirtualAccountTransferInput, type StablecoinCardOrderResponse, type StablecoinChain, type StablecoinCurrency, type StablecoinFundingInput, type StablecoinNetwork, type TopUpVirtualCardInput, type TopUpVirtualCardWithStablecoinInput, type UpdateVirtualCardContactInput, type VirtualAccountResponse, type VirtualCardActionResponse, type VirtualCardDetails, type VirtualCardReferenceInput, type VirtualCardResponse, type VirtualCardTransactionDetails, type VirtualCardTransactionsResponse, type WithdrawVirtualCardInput };
+export { type AmountType, type BankCode, type BettingLookupInput, type BillNetwork, type BillsResponse, type BulkAirtimeInput, type BulkAirtimeRow, type CableService, type CardBrand, type CardCurrency, type CardLimitsInput, type CardType, type ConfirmVirtualAccountPaymentInput, type CreateDynamicVirtualAccountInput, type CreateStablecoinVirtualCardInput, type CreateStaticVirtualAccountInput, type CreateVirtualCardInput, type DataLookupInput, type ElectricityService, type FetchCableBouquetsInput, type FundBettingWalletInput, type GetVirtualCardTransactionsInput, type InternationalProductsInput, type InternationalProvidersInput, type InternationalRateInput, type LookupJambUserInput, type MeterType, type PayCableInput, type PayElectricityInput, Payscribe, PayscribeApiError, type PayscribeConfig, type PayscribeEnvironment, type PayscribeRequestOptions, type PayscribeWebhookEvent, type ProcessAirtimeToWalletInput, type PurchaseEPinInput, type PurchaseSpectranetPinsInput, type RequeryTransactionInput, type RetrieveEPinInput, type SendBulkSmsInput, type SimulateVirtualAccountTransferInput, type StablecoinCardOrderResponse, type StablecoinChain, type StablecoinCurrency, type StablecoinFundingInput, type StablecoinNetwork, type TopUpCableInput, type TopUpVirtualCardInput, type TopUpVirtualCardWithStablecoinInput, type UpdateVirtualCardContactInput, type ValidateCableSmartCardInput, type ValidateElectricityInput, type VendAirtimeInput, type VendDataInput, type VendInternationalBillInput, type VirtualAccountResponse, type VirtualCardActionResponse, type VirtualCardDetails, type VirtualCardReferenceInput, type VirtualCardResponse, type VirtualCardTransactionDetails, type VirtualCardTransactionsResponse, type WithdrawVirtualCardInput };
