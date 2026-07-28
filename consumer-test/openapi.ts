@@ -6,7 +6,7 @@ export const consumerOpenApiSpec = {
     ...sdkOpenApiSpec.info,
     title: "Payscribe SDK Consumer Test",
     description:
-      "Swagger UI for testing the published @payscribe.co/sdk package through this consumer Express server."
+      "Swagger UI for testing the published @payscribe/sdk package through this consumer Express server."
   },
   servers: [{ url: `http://localhost:${process.env.PORT ?? 4001}` }],
   paths: Object.fromEntries(

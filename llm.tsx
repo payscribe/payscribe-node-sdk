@@ -3,12 +3,12 @@
  *
  * This file is intentionally concise and structured. It describes the public
  * SDK API, examples, request shapes, environment behavior, and common failure
- * modes for @payscribe.co/sdk.
+ * modes for @payscribe/sdk.
  */
 
 export const payscribeSdkLlmContext = {
   package: {
-    name: "@payscribe.co/sdk",
+    name: "@payscribe/sdk",
     version: "0.1.0",
     runtime: "Node.js 18+",
     language: "TypeScript",
@@ -18,7 +18,7 @@ export const payscribeSdkLlmContext = {
   },
 
   install: {
-    npm: "npm install @payscribe.co/sdk"
+    npm: "npm install @payscribe/sdk"
   },
 
   environments: {
@@ -28,16 +28,16 @@ export const payscribeSdkLlmContext = {
   },
 
   imports: {
-    esm: 'import { Payscribe } from "@payscribe.co/sdk";',
+    esm: 'import { Payscribe } from "@payscribe/sdk";',
     commonjs:
-      'const { Payscribe } = require("@payscribe.co/sdk");',
+      'const { Payscribe } = require("@payscribe/sdk");',
     types:
-      'import type { CreateStaticVirtualAccountInput, CreateDynamicVirtualAccountInput, CreateVirtualCardInput } from "@payscribe.co/sdk";'
+      'import type { CreateStaticVirtualAccountInput, CreateDynamicVirtualAccountInput, CreateVirtualCardInput } from "@payscribe/sdk";'
   },
 
   clientSetup: {
     example: `
-import { Payscribe } from "@payscribe.co/sdk";
+import { Payscribe } from "@payscribe/sdk";
 
 const payscribe = new Payscribe({
   secretKey: process.env.PAYSCRIBE_SECRET_KEY!,
@@ -438,7 +438,7 @@ if (event.event_type === "accounts.payment.status") {
     className: "PayscribeApiError",
     fields: ["statusCode", "message", "response"],
     example: `
-import { PayscribeApiError } from "@payscribe.co/sdk";
+import { PayscribeApiError } from "@payscribe/sdk";
 
 try {
   await payscribe.virtualAccounts.get("5031240100");
@@ -473,7 +473,7 @@ try {
   },
 
   publish: {
-    packageName: "@payscribe.co/sdk",
+    packageName: "@payscribe/sdk",
     commands: [
       "npm run typecheck",
       "npm run test",

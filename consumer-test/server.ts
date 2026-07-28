@@ -28,7 +28,7 @@ import {
   type VendAirtimeInput,
   type VendDataInput,
   type VendInternationalBillInput
-} from "@payscribe.co/sdk";
+} from "@payscribe/sdk";
 import { consumerOpenApiSpec } from "./openapi.js";
 
 type VerifyWebhookBody = {

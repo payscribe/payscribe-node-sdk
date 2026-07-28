@@ -4,7 +4,7 @@ This is a separate TypeScript Node.js app that installs the published SDK from n
 
 The request bodies are typed from the SDK exports, so editors can show the interface for each endpoint body.
 
-The generic package name is `@payscribe.co/sdk`. Publish that package name first before running this consumer install flow from a clean machine.
+The generic package name is `@payscribe/sdk`. Publish that package name first before running this consumer install flow from a clean machine.
 
 ## Setup
 
