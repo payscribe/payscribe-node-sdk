@@ -32,6 +32,15 @@ export type {
   VendInternationalBillInput
 } from "./types/bills.js";
 export type {
+  CheckoutService,
+  CheckoutSessionDetails,
+  CheckoutApiResponse,
+  CreateCheckoutSessionInput,
+  CreateCheckoutSessionResponse,
+  InitializeCheckoutTransferInput,
+  ValidateCheckoutSessionInput
+} from "./types/checkout.js";
+export type {
   PayscribeConfig,
   PayscribeEnvironment,
   PayscribeRequestOptions

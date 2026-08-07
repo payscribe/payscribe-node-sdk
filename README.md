@@ -19,6 +19,7 @@ const payscribe = new Payscribe({
 
 - [Features](#features)
 - [Setup](#setup)
+- [Hosted Checkout](#hosted-checkout)
 - [Virtual Accounts](#virtual-accounts)
 - [Virtual Cards](#virtual-cards)
 - [Bills Payments](#bills-payments)
@@ -34,6 +35,7 @@ const payscribe = new Payscribe({
 - Stablecoin-funded virtual card creation and top-up
 - Card transaction lookup and cardholder contact updates
 - Bills lookup, validation, vending, and requery flows
+- Hosted checkout session creation, validation, transfer initialization, and status lookup
 - Webhook signature verification
 - TypeScript request/response types
 - Local Swagger playground and typed consumer test app
@@ -127,6 +129,126 @@ const payscribe = new Payscribe({
 	baseUrl: "https://sandbox.payscribe.ng/api/v1/", // Optional. Use only for trusted internal testing.
 });
 ```
+
+</details>
+
+<details id="hosted-checkout">
+<summary><strong>Hosted Checkout</strong></summary>
+
+## Create a Checkout Session
+
+Create checkout sessions on your server. Never expose your Payscribe secret key in browser code.
+
+```ts
+import { Payscribe } from "@payscribe/sdk";
+
+const payscribe = new Payscribe({
+	secretKey: process.env.PAYSCRIBE_SECRET_KEY!,
+	environment: "sandbox",
+});
+
+const session = await payscribe.checkout.createSession({
+	amount: 1000,
+	currency: "NGN",
+	reference: `airtime_${crypto.randomUUID()}`, // Generate a unique reference for every attempt.
+	name: "Ada Lovelace",
+	email: "ada@example.com",
+	phone: "08012345678",
+	service: "airtime",
+	metadata: {
+		network: "mtn",
+		recipient: "08012345678",
+	},
+	origin: "https://merchant.example.com",
+	successUrl: "https://merchant.example.com/payment/success",
+	cancelUrl: "https://merchant.example.com/payment/canceled",
+});
+
+// session.data contains token, canvas_url, and expires_at.
+```
+
+Supported services and metadata:
+
+| Service | Metadata fields |
+| --- | --- |
+| `pay` | No service metadata required |
+| `airtime` | `network`, `recipient` |
+| `data` | `network`, `recipient`, `plan` |
+| `electricity` | `provider`, `meterNumber`, `meterType` (`prepaid` or `postpaid`) |
+| `cable` | `provider`, `account`, `planId` |
+| `betting` | `provider`, `account` |
+
+## Open the Hosted Checkout
+
+You can redirect the customer to `session.data.canvas_url`, or open it in the Payscribe modal from your frontend:
+
+```html
+<button id="checkout-button" type="button">Pay with Payscribe</button>
+<script src="https://checkout.payscribe.co/widget.js"></script>
+<script>
+  document.querySelector("#checkout-button").addEventListener("click", async () => {
+    // This endpoint belongs to your application and creates the session server-side.
+    const response = await fetch("/api/checkout-session", { method: "POST" });
+    const session = await response.json();
+
+    PayscribeCheckout.open({
+      sessionToken: session.token,
+      canvasUrl: session.canvas_url,
+      onSuccess(result) {
+        console.log("Checkout completed", result);
+      },
+      onError(error) {
+        console.error("Checkout failed", error);
+      },
+      onClose() {
+        console.log("Checkout closed");
+      }
+    });
+  });
+</script>
+```
+
+Your server endpoint can return only the public session details:
+
+```ts
+app.post("/api/checkout-session", async (_request, response) => {
+	const result = await payscribe.checkout.createSession({
+		amount: 1000,
+		currency: "NGN",
+		reference: `order_${crypto.randomUUID()}`,
+		name: "Ada Lovelace",
+		email: "ada@example.com",
+		phone: "08012345678",
+		service: "pay",
+		origin: "https://merchant.example.com",
+	});
+
+	response.json(result.data);
+});
+```
+
+## Existing Session Operations
+
+```ts
+const checkout = await payscribe.checkout.getSession("btn_SESSION_TOKEN");
+
+const validation = await payscribe.checkout.validateSession("btn_SESSION_TOKEN", {
+	provider: "phedc",
+	meterNumber: "45083082250",
+	meterType: "prepaid",
+});
+
+const transfer = await payscribe.checkout.initializeTransfer({
+	token: "btn_SESSION_TOKEN",
+	name: "Ada Lovelace",
+	email: "ada@example.com",
+	amount: 1000,
+});
+
+const status = await payscribe.checkout.getSessionStatus("btn_SESSION_TOKEN");
+```
+
+The hosted canvas normally performs the session lookup, transfer initialization, and status polling for you. Use these methods directly only when building a trusted server-side workflow or troubleshooting an integration.
 
 </details>
 

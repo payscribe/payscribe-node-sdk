@@ -520,31 +520,79 @@ function query(params) {
   return queryParams.toString();
 }
 
-// src/resources/virtual-accounts.ts
+// src/resources/checkout.ts
 import { z as z2 } from "zod";
-var staticAccountSchema = z2.object({
-  customerId: z2.string().min(1),
-  banks: z2.array(z2.string().min(1)).min(1),
-  currency: z2.string().default("NGN"),
-  identity: z2.object({
-    type: z2.string().min(1),
-    number: z2.string().min(1)
+var createSessionSchema = z2.object({
+  amount: z2.number().positive(),
+  currency: z2.string().min(1).default("NGN"),
+  reference: z2.string().min(1),
+  name: z2.string().min(1),
+  email: z2.string().email(),
+  phone: z2.string().min(1),
+  service: z2.enum(["pay", "airtime", "data", "electricity", "cable", "betting", "bills"]),
+  metadata: z2.record(z2.unknown()).optional(),
+  origin: z2.string().url().optional(),
+  allowedOrigin: z2.string().url().optional(),
+  successUrl: z2.string().url().optional(),
+  cancelUrl: z2.string().url().optional()
+});
+var transferSchema = z2.object({
+  token: z2.string().min(1),
+  name: z2.string().min(1).optional(),
+  email: z2.string().email().optional(),
+  amount: z2.number().positive()
+});
+var CheckoutResource = class {
+  constructor(http) {
+    this.http = http;
+  }
+  http;
+  createSession(input) {
+    return this.http.request("POST", "button/init", createSessionSchema.parse(input));
+  }
+  getSession(token) {
+    return this.http.request("GET", `button/session/${encodeURIComponent(token)}`);
+  }
+  validateSession(token, input) {
+    return this.http.request(
+      "POST",
+      `button/session/${encodeURIComponent(token)}/validate`,
+      input
+    );
+  }
+  initializeTransfer(input) {
+    return this.http.request("POST", "button/transfer/init", transferSchema.parse(input));
+  }
+  getSessionStatus(token) {
+    return this.http.request("GET", `button/session/${encodeURIComponent(token)}/status`);
+  }
+};
+
+// src/resources/virtual-accounts.ts
+import { z as z3 } from "zod";
+var staticAccountSchema = z3.object({
+  customerId: z3.string().min(1),
+  banks: z3.array(z3.string().min(1)).min(1),
+  currency: z3.string().default("NGN"),
+  identity: z3.object({
+    type: z3.string().min(1),
+    number: z3.string().min(1)
   }).optional()
 });
-var dynamicAccountSchema = z2.object({
-  reference: z2.string().min(1),
-  amount: z2.number().positive(),
-  amountType: z2.enum(["EXACT", "ANY"]).default("EXACT"),
-  description: z2.string().optional(),
-  currency: z2.string().default("NGN"),
-  expiresIn: z2.object({
-    duration: z2.number().positive(),
-    type: z2.string().min(1)
+var dynamicAccountSchema = z3.object({
+  reference: z3.string().min(1),
+  amount: z3.number().positive(),
+  amountType: z3.enum(["EXACT", "ANY"]).default("EXACT"),
+  description: z3.string().optional(),
+  currency: z3.string().default("NGN"),
+  expiresIn: z3.object({
+    duration: z3.number().positive(),
+    type: z3.string().min(1)
   }),
-  customer: z2.object({
-    name: z2.string().min(1),
-    email: z2.string().email(),
-    phone: z2.string().min(1)
+  customer: z3.object({
+    name: z3.string().min(1),
+    email: z3.string().email(),
+    phone: z3.string().min(1)
   })
 });
 var VirtualAccountsResource = class {
@@ -624,55 +672,55 @@ var VirtualAccountsResource = class {
 };
 
 // src/resources/virtual-cards.ts
-import { z as z3 } from "zod";
-var cardLimitsSchema = z3.object({
-  dailyLimit: z3.number().positive().optional(),
-  transactionLimit: z3.number().positive().optional()
+import { z as z4 } from "zod";
+var cardLimitsSchema = z4.object({
+  dailyLimit: z4.number().positive().optional(),
+  transactionLimit: z4.number().positive().optional()
 }).optional();
-var createCardSchema = z3.object({
-  customerId: z3.string().min(1),
-  currency: z3.string().default("USD"),
-  brand: z3.string().min(1),
-  amount: z3.number().positive(),
-  type: z3.string().default("virtual"),
-  reference: z3.string().min(1),
-  contactless: z3.boolean().optional(),
+var createCardSchema = z4.object({
+  customerId: z4.string().min(1),
+  currency: z4.string().default("USD"),
+  brand: z4.string().min(1),
+  amount: z4.number().positive(),
+  type: z4.string().default("virtual"),
+  reference: z4.string().min(1),
+  contactless: z4.boolean().optional(),
   cardLimits: cardLimitsSchema
 });
-var stablecoinFundingSchema = z3.object({
-  stablecoinCurrency: z3.string().default("USDT"),
-  stablecoinNetwork: z3.string().default("Tron"),
-  stablecoinChain: z3.string().default("TRC20")
+var stablecoinFundingSchema = z4.object({
+  stablecoinCurrency: z4.string().default("USDT"),
+  stablecoinNetwork: z4.string().default("Tron"),
+  stablecoinChain: z4.string().default("TRC20")
 });
 var createStablecoinCardSchema = createCardSchema.merge(stablecoinFundingSchema);
-var topUpSchema = z3.object({
-  amount: z3.number().positive(),
-  reference: z3.string().min(1).optional()
+var topUpSchema = z4.object({
+  amount: z4.number().positive(),
+  reference: z4.string().min(1).optional()
 });
 var topUpStablecoinSchema = topUpSchema.merge(stablecoinFundingSchema);
-var withdrawSchema = z3.object({
-  amount: z3.number().positive(),
-  reference: z3.string().min(1)
+var withdrawSchema = z4.object({
+  amount: z4.number().positive(),
+  reference: z4.string().min(1)
 });
-var referenceSchema2 = z3.object({
-  reference: z3.string().min(1)
+var referenceSchema2 = z4.object({
+  reference: z4.string().min(1)
 });
-var transactionsSchema = z3.object({
-  startDate: z3.string().min(1),
-  endDate: z3.string().min(1),
-  pageSize: z3.number().int().positive().optional(),
-  page: z3.number().int().positive().optional()
+var transactionsSchema = z4.object({
+  startDate: z4.string().min(1),
+  endDate: z4.string().min(1),
+  pageSize: z4.number().int().positive().optional(),
+  page: z4.number().int().positive().optional()
 });
-var updateContactSchema = z3.object({
-  email: z3.string().email().optional(),
-  mobile: z3.string().min(1).optional(),
-  billingDetails: z3.object({
-    address1: z3.string().min(1).optional(),
-    address2: z3.string().min(1).optional(),
-    city: z3.string().min(1).optional(),
-    state: z3.string().min(1).optional(),
-    zipcode: z3.string().min(1).optional(),
-    country: z3.string().min(1).optional()
+var updateContactSchema = z4.object({
+  email: z4.string().email().optional(),
+  mobile: z4.string().min(1).optional(),
+  billingDetails: z4.object({
+    address1: z4.string().min(1).optional(),
+    address2: z4.string().min(1).optional(),
+    city: z4.string().min(1).optional(),
+    state: z4.string().min(1).optional(),
+    zipcode: z4.string().min(1).optional(),
+    country: z4.string().min(1).optional()
   }).optional()
 });
 var VirtualCardsResource = class {
@@ -826,12 +874,14 @@ function safeCompare(received, expected) {
 // src/payscribe.ts
 var Payscribe = class {
   bills;
+  checkout;
   virtualAccounts;
   virtualCards;
   webhooks;
   constructor(config) {
     const http = new HttpClient(config);
     this.bills = new BillsResource(http);
+    this.checkout = new CheckoutResource(http);
     this.virtualAccounts = new VirtualAccountsResource(http);
     this.virtualCards = new VirtualCardsResource(http);
     this.webhooks = new WebhooksResource(config.secretKey);

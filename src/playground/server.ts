@@ -22,6 +22,26 @@ app.get("/", (_req, res) => {
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec));
 app.get("/openapi.json", (_req, res) => res.json(openApiSpec));
 
+app.post("/api/checkout/sessions", asyncHandler(async (req, res) => {
+  res.json(await payscribe.checkout.createSession(req.body));
+}));
+
+app.get("/api/checkout/sessions/:token", asyncHandler(async (req, res) => {
+  res.json(await payscribe.checkout.getSession(pathParam(req.params.token)));
+}));
+
+app.post("/api/checkout/sessions/:token/validate", asyncHandler(async (req, res) => {
+  res.json(await payscribe.checkout.validateSession(pathParam(req.params.token), req.body));
+}));
+
+app.post("/api/checkout/transfers", asyncHandler(async (req, res) => {
+  res.json(await payscribe.checkout.initializeTransfer(req.body));
+}));
+
+app.get("/api/checkout/sessions/:token/status", asyncHandler(async (req, res) => {
+  res.json(await payscribe.checkout.getSessionStatus(pathParam(req.params.token)));
+}));
+
 app.post("/api/virtual-accounts/static", asyncHandler(async (req, res) => {
   res.json(await payscribe.virtualAccounts.createStatic(req.body));
 }));

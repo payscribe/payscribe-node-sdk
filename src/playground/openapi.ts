@@ -34,6 +34,7 @@ export const openApiSpec = {
   },
   servers: [{ url: `http://localhost:${process.env.PORT ?? 3000}` }],
   tags: [
+    { name: "Checkout" },
     { name: "Virtual Accounts" },
     { name: "Virtual Cards" },
     { name: "Bills - Cable" },
@@ -50,6 +51,61 @@ export const openApiSpec = {
     { name: "Webhooks" }
   ],
   paths: {
+    "/api/checkout/sessions": {
+      post: {
+        tags: ["Checkout"],
+        summary: "Create a hosted checkout session",
+        description:
+          "Creates a short-lived Button Checkout session using the server-side Payscribe secret key. Use data.canvas_url to open the hosted checkout, or pass data.token to @payscribe/checkout-js.",
+        requestBody: jsonBody("CreateCheckoutSession"),
+        responses: {
+          "200": {
+            description: "Checkout session created",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/CreateCheckoutSessionResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/checkout/sessions/{token}": {
+      get: {
+        tags: ["Checkout"],
+        summary: "Load a checkout session",
+        parameters: [pathParam("token")],
+        responses: checkoutResponse("Public checkout session details")
+      }
+    },
+    "/api/checkout/sessions/{token}/validate": {
+      post: {
+        tags: ["Checkout"],
+        summary: "Validate service details",
+        description: "Pass fields required by the session service. The example is for airtime; electricity uses provider, meterNumber, meterType, and amount.",
+        parameters: [pathParam("token")],
+        requestBody: jsonBody("ValidateCheckoutSession"),
+        responses: checkoutResponse("Validation result")
+      }
+    },
+    "/api/checkout/transfers": {
+      post: {
+        tags: ["Checkout"],
+        summary: "Initialize checkout bank transfer",
+        parameters: [],
+        requestBody: jsonBody("InitializeCheckoutTransfer"),
+        responses: checkoutResponse("Allocated bank transfer account")
+      }
+    },
+    "/api/checkout/sessions/{token}/status": {
+      get: {
+        tags: ["Checkout"],
+        summary: "Get payment and fulfillment status",
+        description: "Polling fallback for clients that cannot maintain the SSE connection.",
+        parameters: [pathParam("token")],
+        responses: checkoutResponse("Current checkout status")
+      }
+    },
     "/api/virtual-accounts/static": {
       post: {
         tags: ["Virtual Accounts"],
@@ -298,6 +354,7 @@ export const openApiSpec = {
   },
   components: {
     schemas: {
+      ...checkoutSchemas(),
       ...accountSchemas(),
       ...cardSchemas(),
       ...billSchemas(),
@@ -308,6 +365,83 @@ export const openApiSpec = {
     }
   }
 };
+
+function checkoutSchemas() {
+  return {
+    CreateCheckoutSession: objectSchema(
+      ["amount", "reference", "name", "email", "phone", "service"],
+      {
+        amount: { type: "number", exclusiveMinimum: 0, example: 1000 },
+        currency: { type: "string", default: "NGN", example: "NGN" },
+        reference: { type: "string", example: "order_123" },
+        name: { type: "string", example: "Ada Lovelace" },
+        email: { type: "string", format: "email", example: "ada@example.com" },
+        phone: { type: "string", example: "08012345678" },
+        service: {
+          type: "string",
+          enum: ["pay", "airtime", "data", "electricity", "cable", "betting", "bills"],
+          example: "electricity"
+        },
+        metadata: {
+          type: "object",
+          additionalProperties: true,
+          description: "Service-specific fields. Electricity requires provider, meterNumber, and meterType.",
+          example: { provider: "phedc", meterNumber: "45083082250", meterType: "prepaid" }
+        },
+        origin: { type: "string", format: "uri", example: "http://localhost:4173" },
+        successUrl: { type: "string", format: "uri", example: "https://merchant.example/success" },
+        cancelUrl: { type: "string", format: "uri", example: "https://merchant.example/cancel" }
+      }
+    ),
+    CreateCheckoutSessionResponse: objectSchema(["status", "data"], {
+      status: { type: "boolean", example: true },
+      description: { type: "string", example: "Checkout session created" },
+      status_code: { type: "integer", example: 200 },
+      data: {
+        type: "object",
+        required: ["token", "canvas_url", "expires_at"],
+        properties: {
+          token: { type: "string", example: "btn_abc123" },
+          canvas_url: {
+            type: "string",
+            format: "uri",
+            example: "https://links.payscribe.co/canvas?token=btn_abc123"
+          },
+          expires_at: { type: "string", format: "date-time", example: "2026-08-06T15:30:00.000Z" }
+        }
+      }
+    }),
+    ValidateCheckoutSession: {
+      type: "object",
+      additionalProperties: true,
+      example: { network: "mtn", recipient: "08012345678", amount: 100 }
+    },
+    InitializeCheckoutTransfer: objectSchema(["token", "amount"], {
+      token: { type: "string", example: "btn_abc123" },
+      name: { type: "string", example: "Ada Lovelace" },
+      email: { type: "string", format: "email", example: "ada@example.com" },
+      amount: { type: "number", exclusiveMinimum: 0, example: 100 }
+    }),
+    CheckoutApiResponse: {
+      type: "object",
+      additionalProperties: true,
+      example: { status: true, data: { status: "pending" } }
+    }
+  };
+}
+
+function checkoutResponse(description: string) {
+  return {
+    "200": {
+      description,
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/CheckoutApiResponse" }
+        }
+      }
+    }
+  };
+}
 
 function cardActionPath(summary: string) {
   return {

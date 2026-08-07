@@ -11,10 +11,12 @@ import type { ParsedQs } from "qs";
 import {
   Payscribe,
   type BulkAirtimeInput,
+  type CreateCheckoutSessionInput,
   type CreateVirtualCardInput,
   type CreateDynamicVirtualAccountInput,
   type CreateStaticVirtualAccountInput,
   type FundBettingWalletInput,
+  type InitializeCheckoutTransferInput,
   type LookupJambUserInput,
   type PayCableInput,
   type PayElectricityInput,
@@ -59,6 +61,11 @@ app.get("/", (_req, res) => {
     service: "Payscribe SDK consumer test",
     routes: [
       "GET /health",
+      "POST /checkout/sessions",
+      "GET /checkout/sessions/:token",
+      "POST /checkout/sessions/:token/validate",
+      "POST /checkout/transfers",
+      "GET /checkout/sessions/:token/status",
       "POST /virtual-accounts/static",
       "POST /virtual-accounts/dynamic",
       "GET /virtual-accounts/:accountNumber",
@@ -86,6 +93,41 @@ app.get("/health", (_req, res) => {
     environment: process.env.PAYSCRIBE_ENVIRONMENT ?? "sandbox"
   });
 });
+
+app.post(
+  "/checkout/sessions",
+  asyncHandler(async (req: Request<object, unknown, CreateCheckoutSessionInput>, res) => {
+    res.json(await payscribe.checkout.createSession(req.body));
+  })
+);
+
+app.get(
+  "/checkout/sessions/:token",
+  asyncHandler(async (req: Request<{ token: string }>, res) => {
+    res.json(await payscribe.checkout.getSession(req.params.token));
+  })
+);
+
+app.post(
+  "/checkout/sessions/:token/validate",
+  asyncHandler(async (req: Request<{ token: string }>, res) => {
+    res.json(await payscribe.checkout.validateSession(req.params.token, req.body));
+  })
+);
+
+app.post(
+  "/checkout/transfers",
+  asyncHandler(async (req: Request<object, unknown, InitializeCheckoutTransferInput>, res) => {
+    res.json(await payscribe.checkout.initializeTransfer(req.body));
+  })
+);
+
+app.get(
+  "/checkout/sessions/:token/status",
+  asyncHandler(async (req: Request<{ token: string }>, res) => {
+    res.json(await payscribe.checkout.getSessionStatus(req.params.token));
+  })
+);
 
 app.post(
   "/virtual-accounts/static",

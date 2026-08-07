@@ -248,6 +248,46 @@ declare class InternationalBillsResource {
     vend(input: VendInternationalBillInput): Promise<BillsResponse>;
 }
 
+type CheckoutService = "pay" | "airtime" | "data" | "electricity" | "cable" | "betting" | "bills";
+type CreateCheckoutSessionInput = {
+    amount: number;
+    currency?: string;
+    reference: string;
+    name: string;
+    email: string;
+    phone: string;
+    service: CheckoutService;
+    metadata?: Record<string, unknown>;
+    origin?: string;
+    allowedOrigin?: string;
+    successUrl?: string;
+    cancelUrl?: string;
+};
+type CheckoutSessionDetails = {
+    token: string;
+    canvas_url: string;
+    expires_at: string;
+};
+type CreateCheckoutSessionResponse = PayscribeResponse<CheckoutSessionDetails>;
+type ValidateCheckoutSessionInput = Record<string, unknown>;
+type InitializeCheckoutTransferInput = {
+    token: string;
+    name?: string;
+    email?: string;
+    amount: number;
+};
+type CheckoutApiResponse = PayscribeResponse<Record<string, unknown>>;
+
+declare class CheckoutResource {
+    private readonly http;
+    constructor(http: HttpClient);
+    createSession(input: CreateCheckoutSessionInput): Promise<CreateCheckoutSessionResponse>;
+    getSession(token: string): Promise<CheckoutApiResponse>;
+    validateSession(token: string, input: ValidateCheckoutSessionInput): Promise<CheckoutApiResponse>;
+    initializeTransfer(input: InitializeCheckoutTransferInput): Promise<CheckoutApiResponse>;
+    getSessionStatus(token: string): Promise<CheckoutApiResponse>;
+}
+
 type BankCode = "9psb" | "palmpay" | string;
 type AmountType = "EXACT" | "ANY";
 type DurationType = "minutes" | "minute" | "hours" | "hour";
@@ -527,6 +567,7 @@ declare class WebhooksResource {
 
 declare class Payscribe {
     readonly bills: BillsResource;
+    readonly checkout: CheckoutResource;
     readonly virtualAccounts: VirtualAccountsResource;
     readonly virtualCards: VirtualCardsResource;
     readonly webhooks: WebhooksResource;
@@ -539,4 +580,4 @@ declare class PayscribeApiError extends Error {
     constructor(message: string, statusCode: number, response: unknown);
 }
 
-export { type AmountType, type BankCode, type BettingLookupInput, type BillNetwork, type BillsResponse, type BulkAirtimeInput, type BulkAirtimeRow, type CableService, type CardBrand, type CardCurrency, type CardLimitsInput, type CardType, type ConfirmVirtualAccountPaymentInput, type CreateDynamicVirtualAccountInput, type CreateStablecoinVirtualCardInput, type CreateStaticVirtualAccountInput, type CreateVirtualCardInput, type DataLookupInput, type ElectricityService, type FetchCableBouquetsInput, type FundBettingWalletInput, type GetVirtualCardTransactionsInput, type InternationalProductsInput, type InternationalProvidersInput, type InternationalRateInput, type LookupJambUserInput, type MeterType, type PayCableInput, type PayElectricityInput, Payscribe, PayscribeApiError, type PayscribeConfig, type PayscribeEnvironment, type PayscribeRequestOptions, type PayscribeWebhookEvent, type ProcessAirtimeToWalletInput, type PurchaseEPinInput, type PurchaseSpectranetPinsInput, type RequeryTransactionInput, type RetrieveEPinInput, type SendBulkSmsInput, type SimulateVirtualAccountTransferInput, type StablecoinCardOrderResponse, type StablecoinChain, type StablecoinCurrency, type StablecoinFundingInput, type StablecoinNetwork, type TopUpCableInput, type TopUpVirtualCardInput, type TopUpVirtualCardWithStablecoinInput, type UpdateVirtualCardContactInput, type ValidateCableSmartCardInput, type ValidateElectricityInput, type VendAirtimeInput, type VendDataInput, type VendInternationalBillInput, type VirtualAccountResponse, type VirtualCardActionResponse, type VirtualCardDetails, type VirtualCardReferenceInput, type VirtualCardResponse, type VirtualCardTransactionDetails, type VirtualCardTransactionsResponse, type WithdrawVirtualCardInput };
+export { type AmountType, type BankCode, type BettingLookupInput, type BillNetwork, type BillsResponse, type BulkAirtimeInput, type BulkAirtimeRow, type CableService, type CardBrand, type CardCurrency, type CardLimitsInput, type CardType, type CheckoutApiResponse, type CheckoutService, type CheckoutSessionDetails, type ConfirmVirtualAccountPaymentInput, type CreateCheckoutSessionInput, type CreateCheckoutSessionResponse, type CreateDynamicVirtualAccountInput, type CreateStablecoinVirtualCardInput, type CreateStaticVirtualAccountInput, type CreateVirtualCardInput, type DataLookupInput, type ElectricityService, type FetchCableBouquetsInput, type FundBettingWalletInput, type GetVirtualCardTransactionsInput, type InitializeCheckoutTransferInput, type InternationalProductsInput, type InternationalProvidersInput, type InternationalRateInput, type LookupJambUserInput, type MeterType, type PayCableInput, type PayElectricityInput, Payscribe, PayscribeApiError, type PayscribeConfig, type PayscribeEnvironment, type PayscribeRequestOptions, type PayscribeWebhookEvent, type ProcessAirtimeToWalletInput, type PurchaseEPinInput, type PurchaseSpectranetPinsInput, type RequeryTransactionInput, type RetrieveEPinInput, type SendBulkSmsInput, type SimulateVirtualAccountTransferInput, type StablecoinCardOrderResponse, type StablecoinChain, type StablecoinCurrency, type StablecoinFundingInput, type StablecoinNetwork, type TopUpCableInput, type TopUpVirtualCardInput, type TopUpVirtualCardWithStablecoinInput, type UpdateVirtualCardContactInput, type ValidateCableSmartCardInput, type ValidateCheckoutSessionInput, type ValidateElectricityInput, type VendAirtimeInput, type VendDataInput, type VendInternationalBillInput, type VirtualAccountResponse, type VirtualCardActionResponse, type VirtualCardDetails, type VirtualCardReferenceInput, type VirtualCardResponse, type VirtualCardTransactionDetails, type VirtualCardTransactionsResponse, type WithdrawVirtualCardInput };
