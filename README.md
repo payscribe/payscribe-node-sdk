@@ -654,6 +654,131 @@ You can redirect the customer to `session.data.canvas_url`, or open it in the Pa
 </script>
 ```
 
+## React and Vite
+
+Install the browser checkout package in your frontend project:
+
+```bash
+npm install @payscribe/checkout-js
+```
+
+The Node SDK and browser package have different responsibilities:
+
+- `@payscribe/sdk` runs on your server and uses your secret key to create the checkout session.
+- `@payscribe/checkout-js` runs in React, Vite, Vue, Svelte, or another browser application and opens the returned session.
+
+Never import a secret key into frontend code or store it in a `VITE_*`, `NEXT_PUBLIC_*`, or similar public environment variable.
+
+React component:
+
+```tsx
+import { useEffect, useState } from "react";
+import PayscribeCheckout from "@payscribe/checkout-js";
+
+export function CheckoutButton() {
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    return () => PayscribeCheckout.destroy();
+  }, []);
+
+  async function openCheckout() {
+    setLoading(true);
+
+    try {
+      // Your server creates the session with @payscribe/sdk.
+      const response = await fetch("/api/checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: "airtime-1000" }),
+      });
+
+      if (!response.ok) throw new Error("Unable to create checkout session");
+      const session = await response.json();
+
+      PayscribeCheckout.open({
+        sessionToken: session.token,
+        canvasUrl: session.canvas_url,
+        onSuccess(result) {
+          console.log("Checkout completed", result);
+        },
+        onError(error) {
+          console.error("Checkout failed", error);
+        },
+        onClose() {
+          console.log("Checkout closed");
+        },
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <button type="button" onClick={openCheckout} disabled={loading}>
+      {loading ? "Opening checkout…" : "Pay with Payscribe"}
+    </button>
+  );
+}
+```
+
+This works in a standard Vite React application without adding a script tag to `index.html`.
+
+## Vite or Any JavaScript Framework
+
+Import the package from any browser entry point, component, store, or action:
+
+```ts
+import PayscribeCheckout from "@payscribe/checkout-js";
+
+export async function startCheckout() {
+  const response = await fetch("/api/checkout-session", { method: "POST" });
+  if (!response.ok) throw new Error("Unable to create checkout session");
+
+  const session = await response.json();
+
+  return PayscribeCheckout.open({
+    sessionToken: session.token,
+    canvasUrl: session.canvas_url,
+    onSuccess: (result) => console.log(result),
+    onError: (error) => console.error(error),
+  });
+}
+```
+
+The returned controller can close or destroy the active modal:
+
+```ts
+const checkout = await startCheckout();
+
+checkout.close();
+checkout.destroy();
+```
+
+For Vue, call `startCheckout()` from a click handler and call `PayscribeCheckout.destroy()` from `onUnmounted`. For Svelte, call it from an event handler and return `PayscribeCheckout.destroy` from `onDestroy`.
+
+## Next.js and Other SSR Frameworks
+
+Load the browser package only on the client:
+
+```tsx
+"use client";
+
+export async function openCheckout(session: {
+  token: string;
+  canvas_url: string;
+}) {
+  const { default: PayscribeCheckout } = await import("@payscribe/checkout-js");
+
+  PayscribeCheckout.open({
+    sessionToken: session.token,
+    canvasUrl: session.canvas_url,
+  });
+}
+```
+
+Do not call the browser package during server rendering because it creates DOM elements and an iframe.
+
 Your server endpoint can return only the public session details:
 
 ```ts
