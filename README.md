@@ -624,7 +624,14 @@ Supported services and metadata:
 | `cable` | `provider`, `account`, `planId` |
 | `betting` | `provider`, `account` |
 
-## Open the Hosted Checkout
+## Frontend Framework Guides
+
+Select your frontend setup below. These examples all use a checkout session created securely by your backend.
+
+<details>
+<summary><strong>HTML / Script Tag</strong></summary>
+
+### Open the Hosted Checkout
 
 You can redirect the customer to `session.data.canvas_url`, or open it in the Payscribe modal from your frontend:
 
@@ -654,7 +661,10 @@ You can redirect the customer to `session.data.canvas_url`, or open it in the Pa
 </script>
 ```
 
-## React and Vite
+</details>
+
+<details>
+<summary><strong>React / Vite</strong></summary>
 
 Install the browser checkout package in your frontend project:
 
@@ -724,7 +734,12 @@ export function CheckoutButton() {
 
 This works in a standard Vite React application without adding a script tag to `index.html`.
 
-## Vite or Any JavaScript Framework
+</details>
+
+<details>
+<summary><strong>JavaScript / Vue / Svelte</strong></summary>
+
+### Vite or Any JavaScript Framework
 
 Import the package from any browser entry point, component, store, or action:
 
@@ -757,7 +772,10 @@ checkout.destroy();
 
 For Vue, call `startCheckout()` from a click handler and call `PayscribeCheckout.destroy()` from `onUnmounted`. For Svelte, call it from an event handler and return `PayscribeCheckout.destroy` from `onDestroy`.
 
-## Next.js and Other SSR Frameworks
+</details>
+
+<details>
+<summary><strong>Next.js / SSR Frameworks</strong></summary>
 
 Load the browser package only on the client:
 
@@ -778,6 +796,8 @@ export async function openCheckout(session: {
 ```
 
 Do not call the browser package during server rendering because it creates DOM elements and an iframe.
+
+</details>
 
 Your server endpoint can return only the public session details:
 
