@@ -1,0 +1,1058 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Payscribe Bills Checkout</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f8fb;
+        --panel: #ffffff;
+        --panel-2: #f9fafc;
+        --text: #162033;
+        --muted: #637083;
+        --line: #dce2ea;
+        --brand: #214dc0;
+        --brand-dark: #1a3ea0;
+        --accent: #214dc0;
+        --danger: #b42318;
+        --success: #067647;
+        --warning: #b54708;
+        --shadow: 0 18px 50px rgba(22, 32, 51, 0.12);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(246, 248, 251, 0.96)),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800' viewBox='0 0 1200 800'%3E%3Crect width='1200' height='800' fill='%23eef3f8'/%3E%3Cg fill='none' stroke='%23d6e1ea' stroke-width='2'%3E%3Cpath d='M0 140h1200M0 300h1200M0 460h1200M0 620h1200M140 0v800M320 0v800M500 0v800M680 0v800M860 0v800M1040 0v800'/%3E%3C/g%3E%3Cg fill='%23ffffff' opacity='.55'%3E%3Crect x='110' y='88' width='210' height='80' rx='12'/%3E%3Crect x='760' y='210' width='260' height='96' rx='12'/%3E%3Crect x='460' y='540' width='280' height='100' rx='12'/%3E%3C/g%3E%3C/svg%3E");
+        background-size: cover;
+        color: var(--text);
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button {
+        border: 0;
+        cursor: pointer;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: minmax(280px, 420px) minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .brand-pane {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 40px;
+        background: rgba(255, 255, 255, 0.72);
+        border-right: 1px solid rgba(220, 226, 234, 0.8);
+        backdrop-filter: blur(12px);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 800;
+        font-size: 20px;
+      }
+
+      .brand-logo {
+        display: block;
+        width: 118px;
+        height: auto;
+      }
+
+      .intro {
+        max-width: 320px;
+      }
+
+      .intro h1 {
+        margin: 0 0 14px;
+        font-size: 34px;
+        line-height: 1.08;
+        letter-spacing: 0;
+      }
+
+      .intro p,
+      .footer-note {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .secure-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 18px;
+        padding: 7px 10px;
+        border: 1px solid rgba(33, 77, 192, 0.14);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--brand);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .secure-pill::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #17b26a;
+        box-shadow: 0 0 0 4px rgba(23, 178, 106, 0.12);
+      }
+
+      .checkout-pane {
+        display: grid;
+        align-content: center;
+        padding: 32px;
+      }
+
+      .checkout {
+        width: min(100%, 920px);
+        margin: 0 auto;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .checkout-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 22px 24px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .merchant-name {
+        margin: 0;
+        font-size: 17px;
+      }
+
+      .session-status {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        margin-top: 5px;
+        padding: 4px 9px;
+        border-radius: 999px;
+        background: #eef2fb;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .session-status.received,
+      .session-status.success,
+      .session-status.fulfilling {
+        background: #dcfae6;
+        color: #067647;
+      }
+
+      .session-status.failed,
+      .session-status.expired,
+      .session-status.canceled {
+        background: #fee4e2;
+        color: #b42318;
+      }
+
+      .amount {
+        text-align: right;
+      }
+
+      .amount-label {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .amount-value {
+        font-weight: 800;
+        font-size: 20px;
+      }
+
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .step {
+        padding: 14px 16px;
+        color: var(--muted);
+        border-right: 1px solid var(--line);
+        font-size: 13px;
+        background: var(--panel-2);
+      }
+
+      .step:last-child {
+        border-right: 0;
+      }
+
+      .step.active {
+        color: var(--brand);
+        background: #ffffff;
+        font-weight: 800;
+      }
+
+      .content {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        min-height: 540px;
+      }
+
+      .form-area {
+        padding: 24px;
+      }
+
+      .summary {
+        padding: 24px;
+        border-left: 1px solid var(--line);
+        background: var(--panel-2);
+      }
+
+      .section-title {
+        margin: 0 0 16px;
+        font-size: 20px;
+      }
+
+      .category-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .category {
+        min-height: 92px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #ffffff;
+        text-align: left;
+      }
+
+      .category.active {
+        border-color: var(--brand);
+        box-shadow: inset 0 0 0 1px var(--brand);
+      }
+
+      .category strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .category span {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .field-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .field {
+        display: grid;
+        gap: 7px;
+      }
+
+      .field.full {
+        grid-column: 1 / -1;
+      }
+
+      label {
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      input,
+      select {
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--text);
+        background: #ffffff;
+      }
+
+      input:focus,
+      select:focus {
+        outline: 3px solid rgba(15, 118, 110, 0.18);
+        border-color: var(--brand);
+      }
+
+      .actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 22px;
+      }
+
+      .btn {
+        min-height: 44px;
+        padding: 0 16px;
+        border-radius: 8px;
+        font-weight: 800;
+      }
+
+      .btn.primary {
+        background: var(--brand);
+        color: #ffffff;
+      }
+
+      .btn.primary:hover {
+        background: var(--brand-dark);
+      }
+
+      .btn.secondary {
+        background: #ffffff;
+        color: var(--text);
+        border: 1px solid var(--line);
+      }
+
+      .btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.62;
+      }
+
+      .summary h2 {
+        margin: 0 0 16px;
+        font-size: 17px;
+      }
+
+      .line-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .line-item strong {
+        min-width: 0;
+        max-width: 62%;
+        color: var(--text);
+        text-align: right;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      .line-item > span {
+        flex: 0 0 auto;
+      }
+
+      .notice {
+        margin-top: 16px;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .notice.info {
+        background: #eff6ff;
+        color: var(--accent);
+      }
+
+      .notice.error {
+        background: #fef3f2;
+        color: var(--danger);
+      }
+
+      .notice.success {
+        background: #ecfdf3;
+        color: var(--success);
+      }
+
+      .review-box {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel-2);
+      }
+
+      .transfer-account {
+        display: grid;
+        gap: 14px;
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel-2);
+        text-align: center;
+      }
+
+      .account-number {
+        font-size: clamp(28px, 6vw, 42px);
+        font-weight: 900;
+        letter-spacing: 0.06em;
+      }
+
+      .copy-account {
+        justify-self: center;
+      }
+
+      .progress-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 16px;
+        padding: 15px;
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        background: #eff6ff;
+        color: var(--accent);
+      }
+
+      .progress-card.confirmed {
+        border-color: #abefc6;
+        background: #ecfdf3;
+        color: var(--success);
+      }
+
+      .progress-card.failed {
+        border-color: #fecdca;
+        background: #fef3f2;
+        color: var(--danger);
+      }
+
+      .progress-card strong,
+      .progress-card span {
+        display: block;
+      }
+
+      .progress-card span {
+        margin-top: 3px;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .spinner {
+        flex: 0 0 auto;
+        width: 26px;
+        height: 26px;
+        border: 3px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      .status-mark {
+        display: grid;
+        flex: 0 0 auto;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+
+      .status-mark span {
+        margin: 0;
+        color: #ffffff;
+        font-size: 20px;
+        font-weight: 900;
+      }
+
+      .result-hero {
+        display: grid;
+        justify-items: center;
+        gap: 10px;
+        padding: 22px 12px;
+        text-align: center;
+      }
+
+      .result-hero.success { color: var(--success); }
+      .result-hero.received { color: var(--success); }
+      .result-hero.manual { color: var(--warning); }
+      .result-hero.error { color: var(--danger); }
+
+      .result-hero p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .notification-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: rgba(15, 23, 42, 0.62);
+        backdrop-filter: blur(4px);
+      }
+
+      .notification-modal {
+        width: min(100%, 440px);
+        padding: 28px;
+        border-radius: 12px;
+        background: #ffffff;
+        box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
+        text-align: center;
+      }
+
+      .notification-modal .status-mark {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 16px;
+        color: var(--danger);
+      }
+
+      .notification-modal h2 {
+        margin: 0 0 8px;
+      }
+
+      .notification-modal p {
+        margin: 0 0 22px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .notification-modal .btn {
+        width: 100%;
+      }
+
+      .result-hero .status-mark {
+        width: 64px;
+        height: 64px;
+      }
+
+      .result-hero .status-mark span {
+        font-size: 34px;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .spinner { animation-duration: 1.8s; }
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      @media (max-width: 860px) {
+        .shell,
+        .content {
+          grid-template-columns: 1fr;
+        }
+
+        .brand-pane {
+          gap: 28px;
+          padding: 28px;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .checkout-pane {
+          padding: 18px;
+        }
+
+        .summary {
+          border-left: 0;
+          border-top: 1px solid var(--line);
+        }
+      }
+
+      @media (max-width: 560px) {
+        .checkout-header,
+        .actions {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .amount {
+          text-align: left;
+        }
+
+        .steps {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .step {
+          border-bottom: 1px solid var(--line);
+        }
+
+        .category-grid,
+        .field-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Payscribe checkout refresh */
+      body {
+        background: linear-gradient(145deg, #f4f7ff 0%, #ffffff 46%, #eef2ff 100%);
+      }
+
+      .shell {
+        grid-template-columns: 260px minmax(0, 1fr);
+      }
+
+      .brand-pane {
+        padding: 32px 28px;
+        background:
+          radial-gradient(circle at 0 100%, rgba(33, 77, 192, 0.13), transparent 42%),
+          linear-gradient(180deg, #ffffff 0%, #f6f8ff 100%);
+        border-right-color: rgba(33, 77, 192, 0.12);
+      }
+
+      .intro h1 {
+        font-size: clamp(28px, 3vw, 38px);
+        letter-spacing: -0.035em;
+      }
+
+      .checkout-pane {
+        padding: 24px;
+      }
+
+      .checkout {
+        border-color: rgba(33, 77, 192, 0.14);
+        border-radius: 18px;
+        box-shadow: 0 24px 70px rgba(11, 21, 54, 0.12);
+      }
+
+      .checkout-header {
+        padding: 20px 24px;
+        background: rgba(255, 255, 255, 0.94);
+      }
+
+      .steps {
+        gap: 6px;
+        padding: 8px;
+        background: #f6f8ff;
+      }
+
+      .step {
+        padding: 11px 12px;
+        border: 0;
+        border-radius: 9px;
+        background: transparent;
+        text-align: center;
+      }
+
+      .step.active {
+        background: #ffffff;
+        box-shadow: 0 4px 14px rgba(33, 77, 192, 0.1);
+      }
+
+      .content {
+        grid-template-columns: minmax(0, 1fr) minmax(230px, 270px);
+        min-height: 480px;
+      }
+
+      .form-area,
+      .summary {
+        padding: 24px;
+      }
+
+      .summary {
+        background: #f8faff;
+        border-left-color: rgba(33, 77, 192, 0.12);
+      }
+
+      .notice,
+      .review-box,
+      .transfer-account,
+      .progress-card {
+        border-radius: 12px;
+      }
+
+      .notice.info,
+      .progress-card {
+        background: #eef2fb;
+        color: var(--brand);
+      }
+
+      .transfer-account {
+        padding: 22px 18px;
+        border-color: rgba(33, 77, 192, 0.16);
+        background: linear-gradient(180deg, #ffffff, #f7f9ff);
+      }
+
+      .account-number {
+        max-width: 100%;
+        color: #0b1536;
+        font-size: clamp(25px, 4vw, 38px);
+        line-height: 1.1;
+        overflow-wrap: anywhere;
+      }
+
+      .btn {
+        min-height: 46px;
+        border-radius: 10px;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+      }
+
+      .btn:hover:not(:disabled) {
+        transform: translateY(-1px);
+      }
+
+      .btn.primary {
+        box-shadow: 0 10px 24px rgba(33, 77, 192, 0.22);
+      }
+
+      @media (max-width: 900px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+
+        .brand-pane {
+          display: flex;
+          min-height: auto;
+          padding: 18px 22px;
+          border-right: 0;
+          border-bottom: 1px solid rgba(33, 77, 192, 0.12);
+        }
+
+        .brand-pane .intro,
+        .brand-pane .footer-note {
+          display: none;
+        }
+
+        .checkout-pane {
+          align-content: start;
+          padding: 16px;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .content {
+          grid-template-columns: 1fr;
+        }
+
+        .summary {
+          border-top: 1px solid rgba(33, 77, 192, 0.12);
+          border-left: 0;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .brand-pane {
+          padding: 14px 16px;
+        }
+
+        .brand-logo {
+          width: 104px;
+        }
+
+        .checkout-pane {
+          padding: 0;
+        }
+
+        .checkout {
+          border: 0;
+          border-radius: 0;
+          box-shadow: none;
+        }
+
+        .checkout-header {
+          flex-direction: row;
+          align-items: center;
+          padding: 16px;
+        }
+
+        .amount {
+          text-align: right;
+        }
+
+        .steps {
+          grid-template-columns: repeat(4, minmax(72px, 1fr));
+          overflow-x: auto;
+        }
+
+        .step {
+          white-space: nowrap;
+        }
+
+        .form-area,
+        .summary {
+          padding: 18px 16px;
+        }
+
+        .actions .btn,
+        .copy-account {
+          width: 100%;
+        }
+      }
+
+      /* Compact modal scale */
+      body {
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      .shell {
+        grid-template-columns: 220px minmax(0, 1fr);
+      }
+
+      .brand-pane {
+        padding: 26px 22px;
+      }
+
+      .brand-logo {
+        width: 104px;
+      }
+
+      .intro {
+        max-width: 220px;
+      }
+
+      .intro h1 {
+        margin-bottom: 10px;
+        font-size: 27px;
+        line-height: 1.12;
+      }
+
+      .intro p,
+      .footer-note {
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .secure-pill {
+        margin-bottom: 14px;
+        padding: 6px 9px;
+        font-size: 11px;
+      }
+
+      .checkout-pane {
+        padding: 20px;
+      }
+
+      .checkout {
+        width: min(100%, 800px);
+        border-radius: 14px;
+      }
+
+      .checkout-header {
+        padding: 16px 20px;
+      }
+
+      .merchant-name {
+        font-size: 15px;
+      }
+
+      .session-status,
+      .amount-label {
+        font-size: 11px;
+      }
+
+      .amount-value {
+        font-size: 18px;
+      }
+
+      .steps {
+        padding: 6px;
+      }
+
+      .step {
+        padding: 9px 8px;
+        font-size: 12px;
+      }
+
+      .content {
+        grid-template-columns: minmax(0, 1fr) 230px;
+        min-height: 420px;
+      }
+
+      .form-area,
+      .summary {
+        padding: 18px 20px;
+      }
+
+      .section-title {
+        margin-bottom: 13px;
+        font-size: 17px;
+      }
+
+      .summary h2 {
+        margin-bottom: 12px;
+        font-size: 15px;
+      }
+
+      .line-item {
+        padding: 9px 0;
+        font-size: 13px;
+      }
+
+      .notice {
+        margin-top: 0;
+        padding: 10px 12px;
+        font-size: 12px;
+      }
+
+      .field-grid {
+        gap: 11px;
+      }
+
+      label {
+        font-size: 12px;
+      }
+
+      input,
+      select {
+        min-height: 40px;
+        padding: 8px 10px;
+        font-size: 14px;
+      }
+
+      .actions {
+        margin-top: 17px;
+      }
+
+      .btn {
+        min-height: 40px;
+        padding: 0 14px;
+        font-size: 13px;
+      }
+
+      .review-box {
+        padding: 11px 13px;
+      }
+
+      .transfer-account {
+        gap: 10px;
+        padding: 17px 15px;
+      }
+
+      .account-number {
+        font-size: clamp(24px, 3.2vw, 32px);
+      }
+
+      .progress-card {
+        gap: 11px;
+        margin-top: 12px;
+        padding: 12px;
+      }
+
+      .progress-card span {
+        font-size: 12px;
+      }
+
+      @media (max-width: 900px) {
+        .shell { grid-template-columns: 1fr; }
+        .checkout-pane { padding: 14px; }
+      }
+
+      @media (max-width: 720px) {
+        .content { grid-template-columns: 1fr; }
+      }
+
+      @media (max-width: 560px) {
+        .checkout-pane { padding: 0; }
+        .checkout-header { padding: 14px 16px; }
+        .form-area, .summary { padding: 16px; }
+        .intro h1 { font-size: 24px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <aside class="brand-pane">
+        <div class="brand">
+          <img class="brand-logo" src="/canvas/payscribe-logo.png" alt="Payscribe" />
+        </div>
+        <div class="intro">
+          <span class="secure-pill">Secure checkout</span>
+          <h1>Complete your payment</h1>
+          <p>
+            Pay securely by bank transfer and receive your service as soon as
+            payment is confirmed.
+          </p>
+        </div>
+        <p class="footer-note">
+          Powered by Payscribe Checkout. Your payment is processed securely.
+        </p>
+      </aside>
+
+      <section class="checkout-pane">
+        <div class="checkout">
+          <header class="checkout-header">
+            <div>
+              <h2 class="merchant-name" id="merchantName">Merchant checkout</h2>
+              <span class="session-status" id="sessionStatus">Session loading</span>
+            </div>
+            <div class="amount">
+              <span class="amount-label">Estimated total</span>
+              <span class="amount-value" id="amountValue">NGN 0</span>
+            </div>
+          </header>
+
+          <nav class="steps" aria-label="Checkout steps">
+            <div class="step active" data-step-label="details">1. Details</div>
+            <div class="step" data-step-label="review">2. Review</div>
+            <div class="step" data-step-label="payment">3. Payment</div>
+            <div class="step" data-step-label="result">4. Result</div>
+          </nav>
+
+          <div class="content">
+            <section class="form-area">
+              <div id="message" class="notice info">
+                Loading your checkout session.
+              </div>
+              <div id="view"></div>
+            </section>
+
+            <aside class="summary">
+              <h2>Checkout summary</h2>
+              <div class="line-item">
+                <span>Session</span>
+                <strong id="summarySession">pending</strong>
+              </div>
+              <div class="line-item">
+                <span>Service</span>
+                <strong id="summaryCategory">Not selected</strong>
+              </div>
+              <div class="line-item" id="summaryProviderRow">
+                <span>Provider</span>
+                <strong id="summaryProvider">Not selected</strong>
+              </div>
+              <div class="line-item" id="summaryRecipientRow">
+                <span>Recipient</span>
+                <strong id="summaryRecipient">Not entered</strong>
+              </div>
+              <div class="line-item">
+                <span>Reference</span>
+                <strong id="summaryReference">Not generated</strong>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/canvas/checkout.js"></script>
+
+  </body>
+</html>

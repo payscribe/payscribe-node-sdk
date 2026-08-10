@@ -249,6 +249,36 @@ declare class InternationalBillsResource {
 }
 
 type CheckoutService = "pay" | "airtime" | "data" | "electricity" | "cable" | "betting" | "bills";
+type CheckoutNetwork = "mtn" | "airtel" | "glo" | "9mobile";
+type CheckoutElectricityProvider = "ikedc" | "ekedc" | "eedc" | "phedc" | "aedc" | "ibedc" | "kedco" | "jed";
+type CheckoutCableProvider = "dstv" | "gotv" | "startimes" | "dstvshowmax";
+type AirtimeCheckoutMetadata = {
+    network: CheckoutNetwork;
+    recipient: string;
+};
+type DataCheckoutMetadata = AirtimeCheckoutMetadata & {
+    plan: number;
+};
+type ElectricityCheckoutMetadata = {
+    provider: CheckoutElectricityProvider;
+    meterNumber: string;
+    meterType: "prepaid" | "postpaid";
+};
+type CableCheckoutMetadata = {
+    provider: CheckoutCableProvider;
+    account: string;
+    planId: string | number;
+};
+type BettingCheckoutMetadata = {
+    account: string;
+    provider?: string;
+    betId?: string;
+};
+type BillsCheckoutMetadata = {
+    category: Exclude<CheckoutService, "pay" | "bills">;
+    [key: string]: unknown;
+};
+type CheckoutMetadata = AirtimeCheckoutMetadata | DataCheckoutMetadata | ElectricityCheckoutMetadata | CableCheckoutMetadata | BettingCheckoutMetadata | BillsCheckoutMetadata;
 type CreateCheckoutSessionInput = {
     amount: number;
     currency?: string;
@@ -257,7 +287,7 @@ type CreateCheckoutSessionInput = {
     email: string;
     phone: string;
     service: CheckoutService;
-    metadata?: Record<string, unknown>;
+    metadata?: CheckoutMetadata;
     origin?: string;
     allowedOrigin?: string;
     successUrl?: string;
@@ -580,4 +610,4 @@ declare class PayscribeApiError extends Error {
     constructor(message: string, statusCode: number, response: unknown);
 }
 
-export { type AmountType, type BankCode, type BettingLookupInput, type BillNetwork, type BillsResponse, type BulkAirtimeInput, type BulkAirtimeRow, type CableService, type CardBrand, type CardCurrency, type CardLimitsInput, type CardType, type CheckoutApiResponse, type CheckoutService, type CheckoutSessionDetails, type ConfirmVirtualAccountPaymentInput, type CreateCheckoutSessionInput, type CreateCheckoutSessionResponse, type CreateDynamicVirtualAccountInput, type CreateStablecoinVirtualCardInput, type CreateStaticVirtualAccountInput, type CreateVirtualCardInput, type DataLookupInput, type ElectricityService, type FetchCableBouquetsInput, type FundBettingWalletInput, type GetVirtualCardTransactionsInput, type InitializeCheckoutTransferInput, type InternationalProductsInput, type InternationalProvidersInput, type InternationalRateInput, type LookupJambUserInput, type MeterType, type PayCableInput, type PayElectricityInput, Payscribe, PayscribeApiError, type PayscribeConfig, type PayscribeEnvironment, type PayscribeRequestOptions, type PayscribeWebhookEvent, type ProcessAirtimeToWalletInput, type PurchaseEPinInput, type PurchaseSpectranetPinsInput, type RequeryTransactionInput, type RetrieveEPinInput, type SendBulkSmsInput, type SimulateVirtualAccountTransferInput, type StablecoinCardOrderResponse, type StablecoinChain, type StablecoinCurrency, type StablecoinFundingInput, type StablecoinNetwork, type TopUpCableInput, type TopUpVirtualCardInput, type TopUpVirtualCardWithStablecoinInput, type UpdateVirtualCardContactInput, type ValidateCableSmartCardInput, type ValidateCheckoutSessionInput, type ValidateElectricityInput, type VendAirtimeInput, type VendDataInput, type VendInternationalBillInput, type VirtualAccountResponse, type VirtualCardActionResponse, type VirtualCardDetails, type VirtualCardReferenceInput, type VirtualCardResponse, type VirtualCardTransactionDetails, type VirtualCardTransactionsResponse, type WithdrawVirtualCardInput };
+export { type AirtimeCheckoutMetadata, type AmountType, type BankCode, type BettingCheckoutMetadata, type BettingLookupInput, type BillNetwork, type BillsCheckoutMetadata, type BillsResponse, type BulkAirtimeInput, type BulkAirtimeRow, type CableCheckoutMetadata, type CableService, type CardBrand, type CardCurrency, type CardLimitsInput, type CardType, type CheckoutApiResponse, type CheckoutCableProvider, type CheckoutElectricityProvider, type CheckoutMetadata, type CheckoutNetwork, type CheckoutService, type CheckoutSessionDetails, type ConfirmVirtualAccountPaymentInput, type CreateCheckoutSessionInput, type CreateCheckoutSessionResponse, type CreateDynamicVirtualAccountInput, type CreateStablecoinVirtualCardInput, type CreateStaticVirtualAccountInput, type CreateVirtualCardInput, type DataCheckoutMetadata, type DataLookupInput, type ElectricityCheckoutMetadata, type ElectricityService, type FetchCableBouquetsInput, type FundBettingWalletInput, type GetVirtualCardTransactionsInput, type InitializeCheckoutTransferInput, type InternationalProductsInput, type InternationalProvidersInput, type InternationalRateInput, type LookupJambUserInput, type MeterType, type PayCableInput, type PayElectricityInput, Payscribe, PayscribeApiError, type PayscribeConfig, type PayscribeEnvironment, type PayscribeRequestOptions, type PayscribeWebhookEvent, type ProcessAirtimeToWalletInput, type PurchaseEPinInput, type PurchaseSpectranetPinsInput, type RequeryTransactionInput, type RetrieveEPinInput, type SendBulkSmsInput, type SimulateVirtualAccountTransferInput, type StablecoinCardOrderResponse, type StablecoinChain, type StablecoinCurrency, type StablecoinFundingInput, type StablecoinNetwork, type TopUpCableInput, type TopUpVirtualCardInput, type TopUpVirtualCardWithStablecoinInput, type UpdateVirtualCardContactInput, type ValidateCableSmartCardInput, type ValidateCheckoutSessionInput, type ValidateElectricityInput, type VendAirtimeInput, type VendDataInput, type VendInternationalBillInput, type VirtualAccountResponse, type VirtualCardActionResponse, type VirtualCardDetails, type VirtualCardReferenceInput, type VirtualCardResponse, type VirtualCardTransactionDetails, type VirtualCardTransactionsResponse, type WithdrawVirtualCardInput };

@@ -613,16 +613,46 @@ const session = await payscribe.checkout.createSession({
 // session.data contains token, canvas_url, and expires_at.
 ```
 
-Supported services and metadata:
+### Supported Services and Metadata
 
-| Service | Metadata fields |
-| --- | --- |
-| `pay` | No service metadata required |
-| `airtime` | `network`, `recipient` |
-| `data` | `network`, `recipient`, `plan` |
-| `electricity` | `provider`, `meterNumber`, `meterType` (`prepaid` or `postpaid`) |
-| `cable` | `provider`, `account`, `planId` |
-| `betting` | `provider`, `account` |
+`metadata` changes according to `service`. Field names are case-sensitive.
+
+| Service | Required metadata | Accepted values and examples |
+| --- | --- | --- |
+| `pay` | None | Generic payment collection. Omit `metadata`. |
+| `airtime` | `network`, `recipient` | `network`: `mtn`, `airtel`, `glo`, or `9mobile`. `recipient`: Nigerian phone number, for example `08012345678`. |
+| `data` | `network`, `recipient`, `plan` | Same network and phone values as airtime. `plan` is the internal numeric Payscribe plan ID returned by the data-plan lookup, for example `177`; do not use a display name such as `1GB` or an arbitrary plan code. |
+| `electricity` | `provider`, `meterNumber`, `meterType` | `provider`: `ikedc`, `ekedc`, `eedc`, `phedc`, `aedc`, `ibedc`, `kedco`, or `jed`. `meterType`: `prepaid` or `postpaid`. Example meter: `45083082250`. |
+| `cable` | `provider`, `account`, `planId` | `provider`: `dstv`, `gotv`, `startimes`, or `dstvshowmax`. `account`: smart-card/IUC number, for example `8062415043`. `planId`: bouquet ID returned by the bouquet lookup. |
+| `betting` | `account` and either `provider` or `betId` | `account`: betting wallet/customer ID, for example `422984`. Obtain supported provider IDs from `payscribe.bills.betting.listProviders()`; example `betId`: `bet9ja`. |
+| `bills` | `category` plus the fields required by that category | `category`: `airtime`, `data`, `electricity`, `cable`, or `betting`. Prefer the specific service value when possible. |
+
+#### Metadata Examples
+
+```ts
+// Airtime
+{ service: "airtime", metadata: { network: "mtn", recipient: "08012345678" } }
+
+// Data — use a plan ID returned by the data lookup endpoint.
+{ service: "data", metadata: { network: "airtel", recipient: "08012345678", plan: 177 } }
+
+// Electricity
+{ service: "electricity", metadata: { provider: "phedc", meterNumber: "45083082250", meterType: "prepaid" } }
+
+// Cable TV — use a planId returned by the bouquet lookup endpoint.
+{ service: "cable", metadata: { provider: "dstv", account: "8062415043", planId: "PLAN_ID" } }
+
+// Betting
+{ service: "betting", metadata: { provider: "bet9ja", account: "422984" } }
+```
+
+Lookup product IDs rather than hardcoding them:
+
+```ts
+const dataPlans = await payscribe.bills.data.lookup({ network: "mtn" });
+const cablePlans = await payscribe.bills.cable.fetchBouquets({ service: "dstv" });
+const bettingProviders = await payscribe.bills.betting.listProviders();
+```
 
 ## Frontend Framework Guides
 

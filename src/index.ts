@@ -32,11 +32,21 @@ export type {
   VendInternationalBillInput
 } from "./types/bills.js";
 export type {
+  AirtimeCheckoutMetadata,
+  BettingCheckoutMetadata,
+  BillsCheckoutMetadata,
+  CableCheckoutMetadata,
+  CheckoutCableProvider,
+  CheckoutElectricityProvider,
+  CheckoutMetadata,
+  CheckoutNetwork,
   CheckoutService,
   CheckoutSessionDetails,
   CheckoutApiResponse,
   CreateCheckoutSessionInput,
   CreateCheckoutSessionResponse,
+  DataCheckoutMetadata,
+  ElectricityCheckoutMetadata,
   InitializeCheckoutTransferInput,
   ValidateCheckoutSessionInput
 } from "./types/checkout.js";

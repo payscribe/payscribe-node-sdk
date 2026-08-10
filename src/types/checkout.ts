@@ -9,6 +9,58 @@ export type CheckoutService =
   | "betting"
   | "bills";
 
+export type CheckoutNetwork = "mtn" | "airtel" | "glo" | "9mobile";
+export type CheckoutElectricityProvider =
+  | "ikedc"
+  | "ekedc"
+  | "eedc"
+  | "phedc"
+  | "aedc"
+  | "ibedc"
+  | "kedco"
+  | "jed";
+export type CheckoutCableProvider = "dstv" | "gotv" | "startimes" | "dstvshowmax";
+
+export type AirtimeCheckoutMetadata = {
+  network: CheckoutNetwork;
+  recipient: string;
+};
+
+export type DataCheckoutMetadata = AirtimeCheckoutMetadata & {
+  plan: number;
+};
+
+export type ElectricityCheckoutMetadata = {
+  provider: CheckoutElectricityProvider;
+  meterNumber: string;
+  meterType: "prepaid" | "postpaid";
+};
+
+export type CableCheckoutMetadata = {
+  provider: CheckoutCableProvider;
+  account: string;
+  planId: string | number;
+};
+
+export type BettingCheckoutMetadata = {
+  account: string;
+  provider?: string;
+  betId?: string;
+};
+
+export type BillsCheckoutMetadata = {
+  category: Exclude<CheckoutService, "pay" | "bills">;
+  [key: string]: unknown;
+};
+
+export type CheckoutMetadata =
+  | AirtimeCheckoutMetadata
+  | DataCheckoutMetadata
+  | ElectricityCheckoutMetadata
+  | CableCheckoutMetadata
+  | BettingCheckoutMetadata
+  | BillsCheckoutMetadata;
+
 export type CreateCheckoutSessionInput = {
   amount: number;
   currency?: string;
@@ -17,7 +69,7 @@ export type CreateCheckoutSessionInput = {
   email: string;
   phone: string;
   service: CheckoutService;
-  metadata?: Record<string, unknown>;
+  metadata?: CheckoutMetadata;
   origin?: string;
   allowedOrigin?: string;
   successUrl?: string;

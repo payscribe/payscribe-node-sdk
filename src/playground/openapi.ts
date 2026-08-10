@@ -383,10 +383,7 @@ function checkoutSchemas() {
           example: "electricity"
         },
         metadata: {
-          type: "object",
-          additionalProperties: true,
-          description: "Service-specific fields. Electricity requires provider, meterNumber, and meterType.",
-          example: { provider: "phedc", meterNumber: "45083082250", meterType: "prepaid" }
+          $ref: "#/components/schemas/CheckoutMetadata"
         },
         origin: { type: "string", format: "uri", example: "http://localhost:4173" },
         successUrl: { type: "string", format: "uri", example: "https://merchant.example/success" },
@@ -410,6 +407,44 @@ function checkoutSchemas() {
           expires_at: { type: "string", format: "date-time", example: "2026-08-06T15:30:00.000Z" }
         }
       }
+    }),
+    CheckoutMetadata: {
+      description: "Select the metadata shape matching `service`. Field names and option values are case-sensitive.",
+      oneOf: [
+        { $ref: "#/components/schemas/AirtimeCheckoutMetadata" },
+        { $ref: "#/components/schemas/DataCheckoutMetadata" },
+        { $ref: "#/components/schemas/ElectricityCheckoutMetadata" },
+        { $ref: "#/components/schemas/CableCheckoutMetadata" },
+        { $ref: "#/components/schemas/BettingCheckoutMetadata" },
+        { $ref: "#/components/schemas/BillsCheckoutMetadata" }
+      ]
+    },
+    AirtimeCheckoutMetadata: objectSchema(["network", "recipient"], {
+      network: { type: "string", enum: ["mtn", "airtel", "glo", "9mobile"], example: "mtn" },
+      recipient: { type: "string", example: "08012345678", description: "Nigerian phone number receiving the airtime." }
+    }),
+    DataCheckoutMetadata: objectSchema(["network", "recipient", "plan"], {
+      network: { type: "string", enum: ["mtn", "airtel", "glo", "9mobile"], example: "airtel" },
+      recipient: { type: "string", example: "08012345678", description: "Nigerian phone number receiving the data." },
+      plan: { type: "integer", example: 177, description: "Internal numeric Payscribe plan ID returned by the data-plan lookup; not a display name such as 1GB or an arbitrary plan code." }
+    }),
+    ElectricityCheckoutMetadata: objectSchema(["provider", "meterNumber", "meterType"], {
+      provider: { type: "string", enum: ["ikedc", "ekedc", "eedc", "phedc", "aedc", "ibedc", "kedco", "jed"], example: "phedc" },
+      meterNumber: { type: "string", example: "45083082250" },
+      meterType: { type: "string", enum: ["prepaid", "postpaid"], example: "prepaid" }
+    }),
+    CableCheckoutMetadata: objectSchema(["provider", "account", "planId"], {
+      provider: { type: "string", enum: ["dstv", "gotv", "startimes", "dstvshowmax"], example: "dstv" },
+      account: { type: "string", example: "8062415043", description: "Decoder smart-card or IUC number." },
+      planId: { oneOf: [{ type: "string" }, { type: "integer" }], example: "PLAN_ID", description: "Bouquet ID returned by the cable bouquet lookup." }
+    }),
+    BettingCheckoutMetadata: objectSchema(["account"], {
+      account: { type: "string", example: "422984", description: "Betting wallet or customer ID." },
+      provider: { type: "string", example: "bet9ja", description: "Provider ID returned by the betting-provider lookup. Pass provider or betId." },
+      betId: { type: "string", example: "bet9ja", description: "Alternative provider identifier when provider is omitted." }
+    }),
+    BillsCheckoutMetadata: objectSchema(["category"], {
+      category: { type: "string", enum: ["airtime", "data", "electricity", "cable", "betting"], example: "electricity" }
     }),
     ValidateCheckoutSession: {
       type: "object",
