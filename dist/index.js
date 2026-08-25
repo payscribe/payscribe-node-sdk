@@ -523,16 +523,12 @@ function query(params) {
 // src/resources/checkout.ts
 import { z as z2 } from "zod";
 var createSessionSchema = z2.object({
-  amount: z2.number().positive(),
   currency: z2.string().min(1).default("NGN"),
   reference: z2.string().min(1),
   name: z2.string().min(1),
   email: z2.string().email(),
   phone: z2.string().min(1),
-  service: z2.enum(["pay", "airtime", "data", "electricity", "cable", "betting", "bills"]),
-  metadata: z2.record(z2.unknown()).optional(),
   origin: z2.string().url().optional(),
-  allowedOrigin: z2.string().url().optional(),
   successUrl: z2.string().url().optional(),
   cancelUrl: z2.string().url().optional()
 });
@@ -540,6 +536,11 @@ var transferSchema = z2.object({
   token: z2.string().min(1),
   name: z2.string().min(1).optional(),
   email: z2.string().email().optional(),
+  amount: z2.number().positive()
+});
+var validateSessionSchema = z2.object({
+  service: z2.enum(["airtime", "data", "electricity", "cable", "betting"]),
+  metadata: z2.record(z2.unknown()),
   amount: z2.number().positive()
 });
 var CheckoutResource = class {
@@ -557,7 +558,7 @@ var CheckoutResource = class {
     return this.http.request(
       "POST",
       `button/session/${encodeURIComponent(token)}/validate`,
-      input
+      validateSessionSchema.parse(input)
     );
   }
   initializeTransfer(input) {

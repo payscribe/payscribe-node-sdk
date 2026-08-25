@@ -20,14 +20,16 @@ describe("hosted checkout", () => {
 
     const payscribe = new Payscribe({ secretKey: "ps_sk_test_123" });
     const result = await payscribe.checkout.createSession({
-      amount: 1000,
       reference: "order_123",
       name: "Ada Lovelace",
       email: "ada@example.com",
-      phone: "08012345678",
-      service: "electricity",
-      metadata: { provider: "phedc", meterNumber: "45083082250", meterType: "prepaid" }
+      phone: "08012345678"
     });
+
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(requestBody).not.toHaveProperty("service");
+    expect(requestBody).not.toHaveProperty("metadata");
+    expect(requestBody).not.toHaveProperty("amount");
 
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
       "https://sandbox.payscribe.ng/api/v1/button/init"
@@ -45,7 +47,11 @@ describe("hosted checkout", () => {
     const payscribe = new Payscribe({ secretKey: "ps_sk_test_123" });
 
     await payscribe.checkout.getSession("btn_123");
-    await payscribe.checkout.validateSession("btn_123", { network: "mtn" });
+    await payscribe.checkout.validateSession("btn_123", {
+      service: "airtime",
+      metadata: { network: "mtn", recipient: "08012345678" },
+      amount: 100
+    });
     await payscribe.checkout.initializeTransfer({ token: "btn_123", amount: 100 });
     await payscribe.checkout.getSessionStatus("btn_123");
 
@@ -55,6 +61,11 @@ describe("hosted checkout", () => {
       "https://sandbox.payscribe.ng/api/v1/button/transfer/init",
       "https://sandbox.payscribe.ng/api/v1/button/session/btn_123/status"
     ]);
+    expect(JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))).toEqual({
+      service: "airtime",
+      metadata: { network: "mtn", recipient: "08012345678" },
+      amount: 100
+    });
     vi.unstubAllGlobals();
   });
 });

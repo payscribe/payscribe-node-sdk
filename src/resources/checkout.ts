@@ -9,16 +9,12 @@ import type {
 } from "../types/checkout.js";
 
 const createSessionSchema = z.object({
-  amount: z.number().positive(),
   currency: z.string().min(1).default("NGN"),
   reference: z.string().min(1),
   name: z.string().min(1),
   email: z.string().email(),
   phone: z.string().min(1),
-  service: z.enum(["pay", "airtime", "data", "electricity", "cable", "betting", "bills"]),
-  metadata: z.record(z.unknown()).optional(),
   origin: z.string().url().optional(),
-  allowedOrigin: z.string().url().optional(),
   successUrl: z.string().url().optional(),
   cancelUrl: z.string().url().optional()
 });
@@ -27,6 +23,12 @@ const transferSchema = z.object({
   token: z.string().min(1),
   name: z.string().min(1).optional(),
   email: z.string().email().optional(),
+  amount: z.number().positive()
+});
+
+const validateSessionSchema = z.object({
+  service: z.enum(["airtime", "data", "electricity", "cable", "betting"]),
+  metadata: z.record(z.unknown()),
   amount: z.number().positive()
 });
 
@@ -48,7 +50,7 @@ export class CheckoutResource {
     return this.http.request(
       "POST",
       `button/session/${encodeURIComponent(token)}/validate`,
-      input
+      validateSessionSchema.parse(input)
     );
   }
 

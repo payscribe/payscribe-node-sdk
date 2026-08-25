@@ -550,16 +550,12 @@ function query(params) {
 // src/resources/checkout.ts
 var import_zod2 = require("zod");
 var createSessionSchema = import_zod2.z.object({
-  amount: import_zod2.z.number().positive(),
   currency: import_zod2.z.string().min(1).default("NGN"),
   reference: import_zod2.z.string().min(1),
   name: import_zod2.z.string().min(1),
   email: import_zod2.z.string().email(),
   phone: import_zod2.z.string().min(1),
-  service: import_zod2.z.enum(["pay", "airtime", "data", "electricity", "cable", "betting", "bills"]),
-  metadata: import_zod2.z.record(import_zod2.z.unknown()).optional(),
   origin: import_zod2.z.string().url().optional(),
-  allowedOrigin: import_zod2.z.string().url().optional(),
   successUrl: import_zod2.z.string().url().optional(),
   cancelUrl: import_zod2.z.string().url().optional()
 });
@@ -567,6 +563,11 @@ var transferSchema = import_zod2.z.object({
   token: import_zod2.z.string().min(1),
   name: import_zod2.z.string().min(1).optional(),
   email: import_zod2.z.string().email().optional(),
+  amount: import_zod2.z.number().positive()
+});
+var validateSessionSchema = import_zod2.z.object({
+  service: import_zod2.z.enum(["airtime", "data", "electricity", "cable", "betting"]),
+  metadata: import_zod2.z.record(import_zod2.z.unknown()),
   amount: import_zod2.z.number().positive()
 });
 var CheckoutResource = class {
@@ -584,7 +585,7 @@ var CheckoutResource = class {
     return this.http.request(
       "POST",
       `button/session/${encodeURIComponent(token)}/validate`,
-      input
+      validateSessionSchema.parse(input)
     );
   }
   initializeTransfer(input) {
