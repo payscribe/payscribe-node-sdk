@@ -594,65 +594,55 @@ const payscribe = new Payscribe({
 });
 
 const session = await payscribe.checkout.createSession({
-	amount: 1000,
 	currency: "NGN",
-	reference: `airtime_${crypto.randomUUID()}`, // Generate a unique reference for every attempt.
+	reference: `order_${crypto.randomUUID()}`, // Generate a unique reference for every attempt.
 	name: "Ada Lovelace",
 	email: "ada@example.com",
 	phone: "08012345678",
-	service: "airtime",
-	metadata: {
-		network: "mtn",
-		recipient: "08012345678",
-	},
 	origin: "https://merchant.example.com",
 	successUrl: "https://merchant.example.com/payment/success",
 	cancelUrl: "https://merchant.example.com/payment/canceled",
 });
 
 // session.data contains token, canvas_url, and expires_at.
+// A new session may return service: "pay" and amount: null until the customer
+// chooses a service and enters the required details in the hosted checkout.
 ```
 
-### Supported Services and Metadata
+### Session Creation Parameters
 
-`metadata` changes according to `service`. Field names are case-sensitive.
-
-| Service | Required metadata | Accepted values and examples |
+| Parameter | Required | Description |
 | --- | --- | --- |
-| `pay` | None | Generic payment collection. Omit `metadata`. |
-| `airtime` | `network`, `recipient` | `network`: `mtn`, `airtel`, `glo`, or `9mobile`. `recipient`: Nigerian phone number, for example `08012345678`. |
-| `data` | `network`, `recipient`, `plan` | Same network and phone values as airtime. `plan` is the internal numeric Payscribe plan ID returned by the data-plan lookup, for example `177`; do not use a display name such as `1GB` or an arbitrary plan code. |
-| `electricity` | `provider`, `meterNumber`, `meterType` | `provider`: `ikedc`, `ekedc`, `eedc`, `phedc`, `aedc`, `ibedc`, `kedco`, or `jed`. `meterType`: `prepaid` or `postpaid`. Example meter: `45083082250`. |
-| `cable` | `provider`, `account`, `planId` | `provider`: `dstv`, `gotv`, `startimes`, or `dstvshowmax`. `account`: smart-card/IUC number, for example `8062415043`. `planId`: bouquet ID returned by the bouquet lookup. |
-| `betting` | `account` and either `provider` or `betId` | `account`: betting wallet/customer ID, for example `422984`. Obtain supported provider IDs from `payscribe.bills.betting.listProviders()`; example `betId`: `bet9ja`. |
-| `bills` | `category` plus the fields required by that category | `category`: `airtime`, `data`, `electricity`, `cable`, or `betting`. Prefer the specific service value when possible. |
+| `reference` | Yes | Unique merchant reference for each checkout attempt. |
+| `name` | Yes | Customer's full name. |
+| `email` | Yes | Customer's email address. |
+| `phone` | Yes | Customer's phone number. |
+| `currency` | No | Transaction currency; defaults to `NGN`. |
+| `origin` | No | Merchant website origin used for secure checkout communication. |
+| `successUrl` | No | URL to return to after a successful payment. |
+| `cancelUrl` | No | URL to return to when checkout is canceled. |
 
-#### Metadata Examples
+Authenticate the SDK with your secret key in the `Payscribe` constructor; the key
+is not part of the session request body. Do **not** send `amount`, `service`,
+`metadata`, or `allowedOrigin` when creating a session.
 
-```ts
-// Airtime
-{ service: "airtime", metadata: { network: "mtn", recipient: "08012345678" } }
+### Customer Service Selection
 
-// Data — use a plan ID returned by the data lookup endpoint.
-{ service: "data", metadata: { network: "airtel", recipient: "08012345678", plan: 177 } }
+After the session opens, the customer selects a service and completes its details
+inside the hosted checkout:
 
-// Electricity
-{ service: "electricity", metadata: { provider: "phedc", meterNumber: "45083082250", meterType: "prepaid" } }
+| Service | Details entered during checkout |
+| --- | --- |
+| `airtime` | Mobile network, recipient phone number, and amount. |
+| `data` | Mobile network, recipient phone number, and a data plan; the plan sets the amount. |
+| `electricity` | Electricity provider, meter number, meter type, and amount. The meter is validated and the customer name is displayed. |
+| `cable` | TV provider, smart-card/IUC number, and a bouquet; the bouquet sets the amount. |
+| `betting` | Betting provider, customer/account identifier, and amount. |
 
-// Cable TV — use a planId returned by the bouquet lookup endpoint.
-{ service: "cable", metadata: { provider: "dstv", account: "8062415043", planId: "PLAN_ID" } }
-
-// Betting
-{ service: "betting", metadata: { provider: "bet9ja", account: "422984" } }
-```
-
-Lookup product IDs rather than hardcoding them:
-
-```ts
-const dataPlans = await payscribe.bills.data.lookup({ network: "mtn" });
-const cablePlans = await payscribe.bills.cable.fetchBouquets({ service: "dstv" });
-const bettingProviders = await payscribe.bills.betting.listProviders();
-```
+The hosted checkout looks up networks, data plans, bouquets, and betting
+providers, validates the selected service, initializes the bank-transfer account,
+and monitors payment status automatically. These values belong to the later
+validation step, not session creation.
 
 ## Frontend Framework Guides
 
@@ -730,7 +720,7 @@ export function CheckoutButton() {
       const response = await fetch("/api/checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: "airtime-1000" }),
+		body: JSON.stringify({ orderId: "order-1000" }),
       });
 
       if (!response.ok) throw new Error("Unable to create checkout session");
@@ -834,13 +824,11 @@ Your server endpoint can return only the public session details:
 ```ts
 app.post("/api/checkout-session", async (_request, response) => {
 	const result = await payscribe.checkout.createSession({
-		amount: 1000,
 		currency: "NGN",
 		reference: `order_${crypto.randomUUID()}`,
 		name: "Ada Lovelace",
 		email: "ada@example.com",
 		phone: "08012345678",
-		service: "pay",
 		origin: "https://merchant.example.com",
 	});
 
@@ -854,9 +842,13 @@ app.post("/api/checkout-session", async (_request, response) => {
 const checkout = await payscribe.checkout.getSession("btn_SESSION_TOKEN");
 
 const validation = await payscribe.checkout.validateSession("btn_SESSION_TOKEN", {
-	provider: "phedc",
-	meterNumber: "45083082250",
-	meterType: "prepaid",
+	service: "electricity",
+	metadata: {
+		provider: "phedc",
+		meterNumber: "45083082250",
+		meterType: "prepaid",
+	},
+	amount: 1000,
 });
 
 const transfer = await payscribe.checkout.initializeTransfer({
@@ -869,7 +861,10 @@ const transfer = await payscribe.checkout.initializeTransfer({
 const status = await payscribe.checkout.getSessionStatus("btn_SESSION_TOKEN");
 ```
 
-The hosted canvas normally performs the session lookup, transfer initialization, and status polling for you. Use these methods directly only when building a trusted server-side workflow or troubleshooting an integration.
+The hosted canvas normally performs session lookup, service selection and
+validation, transfer initialization, and automatic status monitoring for you.
+Use these methods directly only when building a trusted server-side workflow or
+troubleshooting an integration.
 
 </details>
 

@@ -280,16 +280,12 @@ type BillsCheckoutMetadata = {
 };
 type CheckoutMetadata = AirtimeCheckoutMetadata | DataCheckoutMetadata | ElectricityCheckoutMetadata | CableCheckoutMetadata | BettingCheckoutMetadata | BillsCheckoutMetadata;
 type CreateCheckoutSessionInput = {
-    amount: number;
     currency?: string;
     reference: string;
     name: string;
     email: string;
     phone: string;
-    service: CheckoutService;
-    metadata?: CheckoutMetadata;
     origin?: string;
-    allowedOrigin?: string;
     successUrl?: string;
     cancelUrl?: string;
 };
@@ -297,9 +293,30 @@ type CheckoutSessionDetails = {
     token: string;
     canvas_url: string;
     expires_at: string;
+    service?: CheckoutService;
+    amount?: number | null;
+    currency?: string;
+    reference?: string;
+    email?: string;
+    name?: string;
+    phone?: string;
+    metadata?: CheckoutMetadata | null;
+    validated_metadata?: Record<string, unknown> | null;
+    environment?: string;
+    business_name?: string;
+    business_logo?: string;
+    button_color?: string;
+    button_text?: string;
+    success_url?: string;
+    cancel_url?: string;
+    status?: string;
 };
 type CreateCheckoutSessionResponse = PayscribeResponse<CheckoutSessionDetails>;
-type ValidateCheckoutSessionInput = Record<string, unknown>;
+type ValidateCheckoutSessionInput = {
+    service: Exclude<CheckoutService, "pay" | "bills">;
+    metadata: CheckoutMetadata | Record<string, unknown>;
+    amount: number;
+};
 type InitializeCheckoutTransferInput = {
     token: string;
     name?: string;

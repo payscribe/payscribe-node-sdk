@@ -56,7 +56,7 @@ export const openApiSpec = {
         tags: ["Checkout"],
         summary: "Create a hosted checkout session",
         description:
-          "Creates a short-lived Button Checkout session using the server-side Payscribe secret key. Use data.canvas_url to open the hosted checkout, or pass data.token to @payscribe/checkout-js.",
+          "Creates a short-lived hosted checkout session using merchant/customer details only. Do not send amount, service, or metadata. The customer chooses the service, plan, and amount inside the hosted checkout.",
         requestBody: jsonBody("CreateCheckoutSession"),
         responses: {
           "200": {
@@ -82,7 +82,7 @@ export const openApiSpec = {
       post: {
         tags: ["Checkout"],
         summary: "Validate service details",
-        description: "Pass fields required by the session service. The example is for airtime; electricity uses provider, meterNumber, meterType, and amount.",
+        description: "Validate the customer's chosen service using the nested service, metadata, and amount payload. This occurs after session creation and is normally handled by the hosted checkout.",
         parameters: [pathParam("token")],
         requestBody: jsonBody("ValidateCheckoutSession"),
         responses: checkoutResponse("Validation result")
@@ -369,22 +369,13 @@ export const openApiSpec = {
 function checkoutSchemas() {
   return {
     CreateCheckoutSession: objectSchema(
-      ["amount", "reference", "name", "email", "phone", "service"],
+      ["reference", "name", "email", "phone"],
       {
-        amount: { type: "number", exclusiveMinimum: 0, example: 1000 },
         currency: { type: "string", default: "NGN", example: "NGN" },
         reference: { type: "string", example: "order_123" },
         name: { type: "string", example: "Ada Lovelace" },
         email: { type: "string", format: "email", example: "ada@example.com" },
         phone: { type: "string", example: "08012345678" },
-        service: {
-          type: "string",
-          enum: ["pay", "airtime", "data", "electricity", "cable", "betting", "bills"],
-          example: "electricity"
-        },
-        metadata: {
-          $ref: "#/components/schemas/CheckoutMetadata"
-        },
         origin: { type: "string", format: "uri", example: "http://localhost:4173" },
         successUrl: { type: "string", format: "uri", example: "https://merchant.example/success" },
         cancelUrl: { type: "string", format: "uri", example: "https://merchant.example/cancel" }
@@ -408,49 +399,15 @@ function checkoutSchemas() {
         }
       }
     }),
-    CheckoutMetadata: {
-      description: "Select the metadata shape matching `service`. Field names and option values are case-sensitive.",
-      oneOf: [
-        { $ref: "#/components/schemas/AirtimeCheckoutMetadata" },
-        { $ref: "#/components/schemas/DataCheckoutMetadata" },
-        { $ref: "#/components/schemas/ElectricityCheckoutMetadata" },
-        { $ref: "#/components/schemas/CableCheckoutMetadata" },
-        { $ref: "#/components/schemas/BettingCheckoutMetadata" },
-        { $ref: "#/components/schemas/BillsCheckoutMetadata" }
-      ]
-    },
-    AirtimeCheckoutMetadata: objectSchema(["network", "recipient"], {
-      network: { type: "string", enum: ["mtn", "airtel", "glo", "9mobile"], example: "mtn" },
-      recipient: { type: "string", example: "08012345678", description: "Nigerian phone number receiving the airtime." }
+    ValidateCheckoutSession: objectSchema(["service", "metadata", "amount"], {
+      service: { type: "string", enum: ["airtime", "data", "electricity", "cable", "betting"], example: "airtime" },
+      metadata: {
+        type: "object",
+        additionalProperties: true,
+        example: { network: "mtn", recipient: "08012345678" }
+      },
+      amount: { type: "number", exclusiveMinimum: 0, example: 100 }
     }),
-    DataCheckoutMetadata: objectSchema(["network", "recipient", "plan"], {
-      network: { type: "string", enum: ["mtn", "airtel", "glo", "9mobile"], example: "airtel" },
-      recipient: { type: "string", example: "08012345678", description: "Nigerian phone number receiving the data." },
-      plan: { type: "integer", example: 177, description: "Internal numeric Payscribe plan ID returned by the data-plan lookup; not a display name such as 1GB or an arbitrary plan code." }
-    }),
-    ElectricityCheckoutMetadata: objectSchema(["provider", "meterNumber", "meterType"], {
-      provider: { type: "string", enum: ["ikedc", "ekedc", "eedc", "phedc", "aedc", "ibedc", "kedco", "jed"], example: "phedc" },
-      meterNumber: { type: "string", example: "45083082250" },
-      meterType: { type: "string", enum: ["prepaid", "postpaid"], example: "prepaid" }
-    }),
-    CableCheckoutMetadata: objectSchema(["provider", "account", "planId"], {
-      provider: { type: "string", enum: ["dstv", "gotv", "startimes", "dstvshowmax"], example: "dstv" },
-      account: { type: "string", example: "8062415043", description: "Decoder smart-card or IUC number." },
-      planId: { oneOf: [{ type: "string" }, { type: "integer" }], example: "PLAN_ID", description: "Bouquet ID returned by the cable bouquet lookup." }
-    }),
-    BettingCheckoutMetadata: objectSchema(["account"], {
-      account: { type: "string", example: "422984", description: "Betting wallet or customer ID." },
-      provider: { type: "string", example: "bet9ja", description: "Provider ID returned by the betting-provider lookup. Pass provider or betId." },
-      betId: { type: "string", example: "bet9ja", description: "Alternative provider identifier when provider is omitted." }
-    }),
-    BillsCheckoutMetadata: objectSchema(["category"], {
-      category: { type: "string", enum: ["airtime", "data", "electricity", "cable", "betting"], example: "electricity" }
-    }),
-    ValidateCheckoutSession: {
-      type: "object",
-      additionalProperties: true,
-      example: { network: "mtn", recipient: "08012345678", amount: 100 }
-    },
     InitializeCheckoutTransfer: objectSchema(["token", "amount"], {
       token: { type: "string", example: "btn_abc123" },
       name: { type: "string", example: "Ada Lovelace" },
