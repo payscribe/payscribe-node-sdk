@@ -19,8 +19,8 @@
     "llm.tsx"
   ],
   "scripts": {
-    "build": "node api.js && tsup src/index.ts --format esm,cjs --dts --clean",
-    "dev": "node api.js && tsx src/playground/server.ts",
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "dev": "tsx src/playground/server.ts",
     "prepublishOnly": "npm run typecheck && npm test && npm run build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
